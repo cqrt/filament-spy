@@ -205,19 +205,60 @@ function detectWeight(text) {
 }
 
 const KNOWN_BRANDS = [
-  'Bambu Lab', 'Polymaker', 'Protopasta', 'Proto-pasta', 'eSUN', 'SUNLU', 'Jaycar',
+  'Bambu Lab', 'Polymaker', 'Protopasta', 'eSUN', 'SUNLU', 'Jaycar',
   'MakerBot', 'Ultimaker', 'Prusament', 'Formfutura', 'ColorFabb', 'Fillamentum',
-  'Elegoo', 'Creality', 'Anycubic', 'Flashforge', 'Overture', 'Hatchbox', 'Jamg He',
+  'ELEGOO', 'Creality', 'Anycubic', 'Flashforge', 'Overture', 'Hatchbox', 'Jamg He',
   'Kingroon', 'Geeetech', '3DEA', 'Pixel', 'Spool', 'KiwiFil', 'AzureFilm', 'Fiberlogy',
   'Nobufil', 'Spectrum', 'BASF', 'MatterHackers', 'Atomic', '3DXTech', 'LDO', 'Marvle3D',
 ];
 
+// lowercase alias -> canonical brand name
+const BRAND_ALIASES = new Map();
+for (const b of KNOWN_BRANDS) BRAND_ALIASES.set(b.toLowerCase(), b);
+BRAND_ALIASES.set('bambu labs', 'Bambu Lab');
+BRAND_ALIASES.set('bambu', 'Bambu Lab');
+BRAND_ALIASES.set('esun', 'eSUN');
+BRAND_ALIASES.set('elegoo', 'ELEGOO');
+BRAND_ALIASES.set('proto-pasta', 'Protopasta');
+BRAND_ALIASES.set('kiwifil', 'KiwiFil');
+
 function detectBrand(title, vendor) {
-  if (vendor && vendor.trim()) return vendor.trim();
-  const t = title.toLowerCase();
-  for (const b of KNOWN_BRANDS) if (t.includes(b.toLowerCase())) return b;
+  const t = title.toLowerCase().trim();
+  // 1. A brand at the very start of the title is authoritative — it beats the
+  //    store vendor (e.g. Spool sells "Bambu PLA Lite" with vendor "Spool").
+  for (const [alias, canonical] of BRAND_ALIASES) {
+    if (t.startsWith(alias) && (t.length === alias.length || /[\s\-–|(]/.test(t[alias.length]))) {
+      return canonical;
+    }
+  }
+  // 2. Vendor (Shopify), canonicalised when recognisable.
+  if (vendor && vendor.trim()) {
+    const v = vendor.trim();
+    return BRAND_ALIASES.get(v.toLowerCase()) || v;
+  }
+  // 3. Earliest known brand mentioned anywhere in the title.
+  let best = null;
+  let bestIdx = Infinity;
+  for (const [alias, canonical] of BRAND_ALIASES) {
+    const i = t.indexOf(alias);
+    if (i >= 0 && i < bestIdx) {
+      best = canonical;
+      bestIdx = i;
+    }
+  }
+  if (best) return best;
   const first = title.split(/\s[-–|]\s|\s/)[0];
   return first && first.length > 2 ? first : null;
+}
+
+// Remove compatibility notes like "(eSpool+ and Bambu Lab Reusable Spool
+// compatible)" — they pollute brand search with other brands' names.
+function cleanName(name) {
+  return name
+    .replace(/\s*\([^)]*\bcompatible\b[^)]*\)/gi, '')
+    .replace(/\s*[-–—]\s*compatible with.*$/i, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
 }
 
 /* ------------------------------------------------------------------ */
@@ -601,7 +642,7 @@ function enrich(p) {
   const pricePerKg = weightKg ? Math.round((p.price / weightKg) * 100) / 100 : null;
   const clean = {
     id: p.id,
-    name: p.name,
+    name: cleanName(p.name),
     brand: p.brand || null,
     material,
     colour,

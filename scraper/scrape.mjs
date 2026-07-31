@@ -409,11 +409,17 @@ async function scrapeMindkits() {
         const price = money(block.match(/CategoryProductPrice'>\s*\$?([\d,]+(?:\.\d+)?)/)?.[1]);
         if (price == null) continue;
         const was = money(block.match(/CategoryProductRetailPrice'>\s*\$?([\d,]+(?:\.\d+)?)/)?.[1]);
-        // Thumbnail is just above the caption; look backwards for its data-src.
-        const before = html.slice(Math.max(0, m.index - 1600), m.index);
-        const imgMatch = [...before.matchAll(/(?:data-src|src)="([^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"/gi)].pop();
+        // Thumbnail is the img.CategoryProductThumbnail just above the caption
+        // (an <input type=image> heart icon sits between them — don't grab that).
+        const before = html.slice(Math.max(0, m.index - 2500), m.index);
+        const imgMatch =
+          before.match(/<img[^>]*class=['"]CategoryProductThumbnail['"][^>]*src=['"]([^'"]+)['"]/i) ||
+          before.match(/<img[^>]*src=['"]([^'"]+)['"][^>]*class=['"]CategoryProductThumbnail['"]/i);
         const image = imgMatch
-          ? decodeEntities(imgMatch[1]).replace(/^\/\//, 'https://').replace(/^\//, `${store.baseUrl}/`)
+          ? decodeEntities(imgMatch[1])
+              .replace(/^\/\//, 'https://')
+              .replace(/^\//, `${store.baseUrl}/`)
+              .replace(/([?&])(b?w)=\d+/g, '$1$2=600') // request a larger render
           : '';
         const fullUrl = href.startsWith('http') ? href : `${store.baseUrl}${href.startsWith('/') ? '' : '/'}${href}`;
         if (seen.has(fullUrl)) continue;

@@ -25,9 +25,13 @@ the data is collected **server-side** ahead of time:
 1. `scraper/scrape.mjs` (Node 20+, zero dependencies) pulls every retailer's catalogue,
    normalises it (material, colour, brand, spool weight, $/kg, sale price, stock) and writes
    `data/products.json` + `data/meta.json`.
-2. A GitHub Action (`.github/workflows/scrape.yml`) runs the scraper **twice a day** and
+2. Product images are downloaded **exactly once per unique image** (keyed by URL hash, at
+   card-friendly ~480px) into `data/images/` and served from GitHub's CDN — so the site puts
+   essentially zero ongoing load on retailers' image servers. Cache files no longer
+   referenced are pruned automatically.
+3. A GitHub Action (`.github/workflows/scrape.yml`) runs the scraper **twice a day** and
    commits the fresh data straight to this repo.
-3. `index.html` — the entire app in one file, no build step — loads the JSON and gives you
+4. `index.html` — the entire app in one file, no build step — loads the JSON and gives you
    instant search, facet filters and deal sorting.
 
 ## Setup (one-time)
@@ -48,8 +52,11 @@ the data is collected **server-side** ahead of time:
 ## Local development
 
 ```sh
-# Regenerate the data (takes a couple of minutes)
+# Regenerate the data (takes a couple of minutes; first run also downloads all images)
 node scraper/scrape.mjs
+
+# Skip image caching for a quick data-only run
+# PowerShell: $env:SKIP_IMAGES='1'; node scraper/scrape.mjs
 
 # Serve the app (any static server works)
 python -m http.server 8000

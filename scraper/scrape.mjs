@@ -11,7 +11,8 @@
  */
 
 import { execFile } from 'node:child_process';
-import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { mkdir, open, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
@@ -75,6 +76,110 @@ async function curlText(url, { timeoutMs = 60000, ua = null } = {}) {
   args.push(url);
   const { stdout } = await execFileP('curl', args, { maxBuffer: 32 * 1024 * 1024, timeout: timeoutMs + 5000 });
   return stdout;
+}
+
+/**
+ * Run fn over items with a concurrency cap and a small stagger between tasks.
+ */
+async function mapLimit(items, limit, fn, staggerMs = 120) {
+  let i = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length || 1) }, async () => {
+    while (i < items.length) {
+      await fn(items[i++], i - 1);
+      if (staggerMs) await sleep(staggerMs);
+    }
+  });
+  await Promise.all(workers);
+}
+
+/* ------------------------------------------------------------------ */
+/* Image cache: download each image once, serve from the repo           */
+/* ------------------------------------------------------------------ */
+
+const IMAGE_DIR = path.join(DATA_DIR, 'images');
+
+function imageCacheName(url) {
+  const ext = (url.match(/\.(jpe?g|png|webp|gif)(\?|#|$)/i)?.[1] || 'jpg').toLowerCase().replace('jpeg', 'jpg');
+  const hash = createHash('sha1').update(url).digest('hex').slice(0, 16);
+  return `${hash}.${ext}`;
+}
+
+async function curlDownload(url, dest, { timeoutMs = 30000 } = {}) {
+  await execFileP(
+    'curl',
+    ['-s', '--compressed', '--max-time', String(Math.ceil(timeoutMs / 1000)), '-A', BROWSER_UA, '-o', dest, url],
+    { timeout: timeoutMs + 5000 }
+  );
+}
+
+async function looksLikeImageFile(file) {
+  try {
+    const fd = await open(file, 'r');
+    const buf = Buffer.alloc(12);
+    await fd.read(buf, 0, 12, 0);
+    await fd.close();
+    if (buf[0] === 0xff && buf[1] === 0xd8) return true; // jpeg
+    if (buf[0] === 0x89 && buf[1] === 0x50) return true; // png
+    if (buf.subarray(0, 4).toString('latin1') === 'RIFF' && buf.subarray(8, 12).toString('latin1') === 'WEBP') return true;
+    if (buf.subarray(0, 3).toString('latin1') === 'GIF') return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+const fileExists = (f) => stat(f).then((s) => s.size > 0).catch(() => false);
+
+/**
+ * Download every remote product image exactly once into data/images/
+ * (keyed by URL hash, so unchanged images are never re-fetched), rewrite
+ * product image fields to the local paths, and prune cache files that are
+ * no longer referenced. Failed downloads keep the original remote URL.
+ */
+async function cacheImages(products) {
+  const urls = new Set();
+  const referenced = new Set();
+  for (const p of products) {
+    if (/^https?:\/\//.test(p.image)) urls.add(p.image);
+    else if (p.image.startsWith('data/images/')) referenced.add(p.image.slice('data/images/'.length));
+  }
+  await mkdir(IMAGE_DIR, { recursive: true });
+  let downloaded = 0;
+  let reused = 0;
+  let failed = 0;
+  let done = 0;
+  const list = [...urls];
+  for (const url of list) referenced.add(imageCacheName(url));
+  await mapLimit(list, 4, async (url) => {
+    const fname = imageCacheName(url);
+    const dest = path.join(IMAGE_DIR, fname);
+    if (await fileExists(dest)) {
+      reused++;
+    } else {
+      try {
+        await curlDownload(url, dest);
+        if (!(await looksLikeImageFile(dest))) throw new Error('not an image');
+        downloaded++;
+      } catch {
+        failed++;
+        await rm(dest, { force: true }).catch(() => {});
+      }
+    }
+    if (++done % 200 === 0) console.log(`  images: ${done}/${list.length} (${downloaded} new)`);
+  });
+  for (const p of products) {
+    if (/^https?:\/\//.test(p.image) && (await fileExists(path.join(IMAGE_DIR, imageCacheName(p.image))))) {
+      p.image = `data/images/${imageCacheName(p.image)}`;
+    }
+  }
+  let pruned = 0;
+  for (const f of await readdir(IMAGE_DIR).catch(() => [])) {
+    if (!referenced.has(f)) {
+      await rm(path.join(IMAGE_DIR, f), { force: true }).catch(() => {});
+      pruned++;
+    }
+  }
+  console.log(`Images: ${reused} cached, ${downloaded} downloaded, ${failed} failed, ${pruned} pruned`);
 }
 
 const NAMED_ENTITIES = { amp: '&', quot: '"', apos: "'", lt: '<', gt: '>', nbsp: ' ', ndash: '–', mdash: '—' };
@@ -297,6 +402,10 @@ const SHOPIFY = [
   { key: 'bits4bots', name: 'Bits4Bots', baseUrl: 'https://bits4bots.co.nz' },
 ];
 
+// Ask the Shopify CDN for a ~480px render instead of the full-size original.
+const shopifySized = (url, width = 480) =>
+  url && !/([?&])width=/.test(url) ? `${url}${url.includes('?') ? '&' : '?'}width=${width}` : url;
+
 async function scrapeShopify(store) {
   const out = [];
   for (let page = 1; page <= 20; page++) {
@@ -313,11 +422,12 @@ async function scrapeShopify(store) {
         const was = money(v.compare_at_price);
         // Per-variant image first (colour shots); fall back to the product's
         // linked image, then the product's first image.
-        const image =
+        const image = shopifySized(
           v.featured_image?.src ||
-          p.images?.find((img) => (img.variant_ids || []).includes(v.id))?.src ||
-          p.images?.[0]?.src ||
-          '';
+            p.images?.find((img) => (img.variant_ids || []).includes(v.id))?.src ||
+            p.images?.[0]?.src ||
+            ''
+        );
         const variantName = v.title && v.title !== 'Default Title' ? v.title : '';
         const name = variantName && !p.title.toLowerCase().includes(variantName.toLowerCase())
           ? `${p.title} - ${variantName}`
@@ -343,6 +453,22 @@ async function scrapeShopify(store) {
     await sleep(400);
   }
   return out;
+}
+
+// Pick the srcset variant closest to ~480w; fall back to thumbnail, then full src.
+function pickSizedImage(img) {
+  if (img?.srcset) {
+    const entries = img.srcset
+      .split(',')
+      .map((s) => s.trim().match(/(\S+)\s+(\d+)w/))
+      .filter(Boolean)
+      .map((m) => ({ url: m[1], w: +m[2] }));
+    if (entries.length) {
+      entries.sort((a, b) => Math.abs(a.w - 480) - Math.abs(b.w - 480));
+      return entries[0].url;
+    }
+  }
+  return img?.thumbnail || img?.src || '';
 }
 
 async function scrape3dea() {
@@ -375,7 +501,7 @@ async function scrape3dea() {
         store: store.key,
         storeName: store.name,
         url: p.permalink,
-        image: p.images?.[0]?.src || '',
+        image: pickSizedImage(p.images?.[0]),
         price: Math.round(price * 100) / 100,
         wasPrice: p.on_sale && regular > price ? Math.round(regular * 100) / 100 : null,
         currency: 'NZD',
@@ -439,7 +565,7 @@ async function scrapeMindkits() {
           ? decodeEntities(imgMatch[1])
               .replace(/^\/\//, 'https://')
               .replace(/^\//, `${store.baseUrl}/`)
-              .replace(/([?&])(b?w)=\d+/g, '$1$2=600') // request a larger render
+              .replace(/([?&])(b?w)=\d+/g, '$1$2=480') // request a card-sized render
           : '';
         const fullUrl = href.startsWith('http') ? href : `${store.baseUrl}${href.startsWith('/') ? '' : '/'}${href}`;
         if (seen.has(fullUrl)) continue;
@@ -781,6 +907,9 @@ async function main() {
     console.log(`  … ${products.length} total`);
     return;
   }
+
+  // Cache product images into the repo (one download per unique image, ever).
+  if (!process.env.SKIP_IMAGES) await cacheImages(products);
 
   await mkdir(DATA_DIR, { recursive: true });
   const generatedAt = new Date().toISOString();

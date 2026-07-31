@@ -1,40 +1,40 @@
 {
-  "generatedAt": "2026-07-31T21:12:01.835Z",
+  "generatedAt": "2026-07-31T21:59:32.338Z",
   "stores": {
     "spool": {
       "name": "Spool",
       "url": "https://spool.co.nz",
       "status": "ok",
       "count": 79,
-      "durationMs": 856
+      "durationMs": 616
     },
     "bits4bots": {
       "name": "Bits4Bots",
       "url": "https://bits4bots.co.nz",
       "status": "ok",
       "count": 985,
-      "durationMs": 2898
+      "durationMs": 1132
     },
     "3dea": {
       "name": "3DEA",
       "url": "https://www.3dea.co.nz",
-      "status": "stale",
+      "status": "ok",
       "count": 674,
-      "durationMs": 78999
+      "durationMs": 57533
     },
     "mindkits": {
       "name": "Mindkits",
       "url": "https://www.mindkits.co.nz",
       "status": "ok",
-      "count": 438,
-      "durationMs": 33355
+      "count": 409,
+      "durationMs": 31753
     },
     "marvle3d": {
       "name": "Marvle3D",
       "url": "https://marvle3d.co.nz",
       "status": "ok",
-      "count": 106,
-      "durationMs": 14581
+      "count": 134,
+      "durationMs": 18253
     },
     "jaycar": {
       "name": "Jaycar",
@@ -42,8 +42,8 @@
       "status": "error",
       "count": 0,
       "error": "HTTP 403 (DataDome bot protection)",
-      "durationMs": 337
+      "durationMs": 265
     }
   },
-  "productCount": 2282
+  "productCount": 2281
 }

@@ -307,11 +307,17 @@ async function scrapeShopify(store) {
     for (const p of products) {
       const text = `${p.title} ${p.product_type || ''} ${(p.tags || []).join(' ')}`;
       if (!looksLikeFilament(text)) continue;
-      const image = p.images?.[0]?.src || '';
       for (const v of p.variants || []) {
         const price = money(v.price);
         if (price == null) continue;
         const was = money(v.compare_at_price);
+        // Per-variant image first (colour shots); fall back to the product's
+        // linked image, then the product's first image.
+        const image =
+          v.featured_image?.src ||
+          p.images?.find((img) => (img.variant_ids || []).includes(v.id))?.src ||
+          p.images?.[0]?.src ||
+          '';
         const variantName = v.title && v.title !== 'Default Title' ? v.title : '';
         const name = variantName && !p.title.toLowerCase().includes(variantName.toLowerCase())
           ? `${p.title} - ${variantName}`

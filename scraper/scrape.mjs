@@ -261,6 +261,20 @@ function cleanName(name) {
     .trim();
 }
 
+// Surface finish (orthogonal to material).
+function detectFinish(text) {
+  if (/\bsilk\b/i.test(text)) return 'Silk';
+  if (/\bmatte\b/i.test(text)) return 'Matte';
+  return null;
+}
+
+// Refill (loose coil) vs spooled filament. Only tag what's explicit in the name.
+function detectFormat(text) {
+  if (/\brefills?\b|\brefilament\b|\bno spool\b|without (a )?spool/i.test(text)) return 'Refill';
+  if (/\bwith\b[^,–—()]*spool|\((reusable )?spool\)|\bspooled\b|\/spool\b/i.test(text)) return 'Spooled';
+  return null;
+}
+
 /* ------------------------------------------------------------------ */
 /* Filament classification                                             */
 /* ------------------------------------------------------------------ */
@@ -646,6 +660,8 @@ function enrich(p) {
   const { colour, colourHex } = detectColour(`${p._colourHint || ''} ${text}`);
   const weightKg = detectWeight(text) || p._weightHint || null;
   const pricePerKg = weightKg ? Math.round((p.price / weightKg) * 100) / 100 : null;
+  const finish = detectFinish(text);
+  const format = detectFormat(text);
   const clean = {
     id: p.id,
     name: cleanName(p.name),
@@ -654,6 +670,8 @@ function enrich(p) {
     colour,
     colourHex,
     weightKg,
+    finish,
+    format,
     store: p.store,
     storeName: p.storeName,
     url: p.url,
@@ -664,7 +682,7 @@ function enrich(p) {
     currency: p.currency || 'NZD',
     inStock: p.inStock,
   };
-  clean.searchText = `${clean.name} ${clean.brand || ''} ${material} ${colour} ${p.variant || ''}`
+  clean.searchText = `${clean.name} ${clean.brand || ''} ${material} ${colour} ${finish || ''} ${format || ''} ${p.variant || ''}`
     .toLowerCase()
     .replace(/\s+/g, ' ')
     .trim();

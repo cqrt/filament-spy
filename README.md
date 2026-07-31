@@ -14,7 +14,7 @@ and price-per-kg** across NZ retailers, and surfaces the best deals.
 | [bits4bots.co.nz](https://bits4bots.co.nz) | Shopify `products.json` API | ✅ Automatic |
 | [3dea.co.nz](https://www.3dea.co.nz) | WooCommerce Store API | ✅ Automatic |
 | [mindkits.co.nz](https://www.mindkits.co.nz) | Category page HTML | ✅ Automatic |
-| [marvle3d.co.nz](https://marvle3d.co.nz) | Category pages via [r.jina.ai](https://r.jina.ai) reader proxy (Cloudflare protected) | ✅ Automatic (best effort) |
+| [marvle3d.co.nz](https://marvle3d.co.nz) | PrestaShop category pages via curl ([r.jina.ai](https://r.jina.ai) reader proxy as fallback) | ✅ Automatic |
 | [jaycar.co.nz](https://www.jaycar.co.nz) | Blocked by DataDome bot protection | ⚠️ Manual file only — see `data/manual/` |
 
 ## How it works
@@ -71,8 +71,8 @@ python -m http.server 8000
 - Prices are read from public catalogue pages/APIs and cached for ~12 hours; always confirm
   the final price (and shipping) on the retailer's site. All product names, prices and
   images remain the property of the respective retailers.
-- Marvle3D is fetched through the free [r.jina.ai](https://r.jina.ai) reader proxy because
-  their Cloudflare setup blocks plain HTTP clients; if that proxy is down their data simply
-  shows as "unavailable" until the next run.
+- Marvle3D's Cloudflare blocks Node's HTTP client but not curl with a browser user agent, so
+  it is scraped directly; the free [r.jina.ai](https://r.jina.ai) reader proxy is used as a
+  fallback. If a store fails during a run, its previous data is kept and flagged "stale".
 - The scraper is deliberately gentle: a handful of requests per store, twice a day, with a
   descriptive user agent.

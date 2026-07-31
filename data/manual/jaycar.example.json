@@ -1,0 +1,17 @@
+[
+  {
+    "_note": "Jaycar (jaycar.co.nz) blocks automated scraping with DataDome bot protection, so it cannot be collected automatically. To include Jaycar products, copy this file to jaycar.json (same folder) and maintain entries manually in this exact shape. The scraper will merge them in and the filename (jaycar) becomes the store key. Delete this _note object when copying.",
+    "id": "manual-jaycar-example-1",
+    "name": "Jaycar PLA Filament - White - 1kg",
+    "brand": "Jaycar",
+    "store": "jaycar",
+    "storeName": "Jaycar",
+    "url": "https://www.jaycar.co.nz/",
+    "image": "",
+    "price": 29.9,
+    "wasPrice": null,
+    "currency": "NZD",
+    "inStock": null,
+    "variant": ""
+  }
+]

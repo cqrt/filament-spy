@@ -1,0 +1,13 @@
+{
+  "name": "filament-spy-scraper",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Scrapes NZ 3D-printer filament retailers and builds data/products.json for the Filament Spy static app.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "scrape": "node scrape.mjs"
+  }
+}

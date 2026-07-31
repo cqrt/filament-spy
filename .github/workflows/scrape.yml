@@ -1,0 +1,39 @@
+name: Update filament data
+
+on:
+  schedule:
+    # 06:17 and 18:17 UTC every day
+    - cron: "17 6,18 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: filament-scrape
+  cancel-in-progress: true
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Scrape retailers
+        run: node scraper/scrape.mjs
+
+      - name: Commit updated data
+        run: |
+          git config user.name "filament-spy-bot"
+          git config user.email "filament-spy-bot@users.noreply.github.com"
+          git add data/products.json data/meta.json
+          if git diff --cached --quiet; then
+            echo "No data changes"
+          else
+            git commit -m "chore: update filament data [skip ci]"
+            git push
+          fi

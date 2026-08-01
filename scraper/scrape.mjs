@@ -544,12 +544,22 @@ function pickSizedImage(img) {
   return img?.thumbnail || img?.src || '';
 }
 
-async function scrape3dea() {
-  const store = { key: '3dea', name: '3DEA', baseUrl: 'https://www.3dea.co.nz' };
+const WOO_STORES = [
+  {
+    key: '3dea', name: '3DEA', baseUrl: 'https://www.3dea.co.nz', apiPath: '/shop/wp-json/wc/store/v1/products', gstRate: 1, weightHint: 'api',
+    excludeCats: /resin|printer-parts|printer-kits|accessories|tools|gift-card|build-plate|dryer|nozzles|hotend|extruder/i,
+  },
+  {
+    key: '3dps', name: '3D Printing Services', baseUrl: 'https://3dprintingservices.co.nz', apiPath: '/wp-json/wc/store/v1/products', gstRate: 1.15, weightHint: 'none', // prices are GST-exclusive; weight field is shipping weight
+    excludeCats: /resin|printer-parts|printer-kits|accessories|tools|gift-card|build-plate|dryer|nozzles|hot-end|hotend|extruder/i,
+  },
+];
+
+async function scrapeWoo(store) {
   const out = [];
-  const EXCLUDE_CATS = /resin|printer-parts|printer-kits|accessories|tools|gift-card|build-plate|dryer|nozzles|hotend|extruder/i;
+  const EXCLUDE_CATS = store.excludeCats;
   for (let page = 1; page <= 30; page++) {
-    const url = `${store.baseUrl}/shop/wp-json/wc/store/v1/products?per_page=100&page=${page}`;
+    const url = `${store.baseUrl}${store.apiPath}?per_page=100&page=${page}`;
     const products = await fetchJson(url);
     if (!Array.isArray(products) || !products.length) break;
     for (const p of products) {
@@ -560,9 +570,9 @@ async function scrape3dea() {
       if (!looksLikeFilament(text)) continue;
       const minor = p.prices?.currency_minor_unit ?? 2;
       const div = 10 ** minor;
-      const price = money(p.prices?.price) / div;
+      const price = (money(p.prices?.price) / div) * store.gstRate;
       if (!Number.isFinite(price) || price <= 0) continue;
-      const regular = money(p.prices?.regular_price) / div;
+      const regular = (money(p.prices?.regular_price) / div) * store.gstRate;
       const attr = (n) => (p.attributes || []).find((a) => a.name?.toLowerCase() === n);
       const colourTerms = (attr('colour')?.terms || []).map((t) => t.name).join(' ');
       const materialAttr = (attr('material')?.terms || [])[0]?.name;
@@ -570,7 +580,7 @@ async function scrape3dea() {
       out.push({
         id: `${store.key}-${p.id}`,
         name,
-        brand: detectBrand(name, p.brands?.[0]?.name || '3DEA'),
+        brand: detectBrand(name, p.brands?.[0]?.name || store.name),
         store: store.key,
         storeName: store.name,
         url: p.permalink,
@@ -582,7 +592,7 @@ async function scrape3dea() {
         variant: '',
         _colourHint: colourTerms,
         _materialHint: materialAttr || '',
-        _weightHint: money(p.weight) || null,
+        _weightHint: store.weightHint === 'api' ? money(p.weight) || null : null,
         _descHint: stripHtml(p.short_description || ''),
       });
     }
@@ -1035,7 +1045,7 @@ async function loadManual() {
 
 const ADAPTERS = [
   ...SHOPIFY.map((s) => ({ key: s.key, name: s.name, url: s.baseUrl, fn: () => scrapeShopify(s) })),
-  { key: '3dea', name: '3DEA', url: 'https://www.3dea.co.nz', fn: scrape3dea },
+  ...WOO_STORES.map((w) => ({ key: w.key, name: w.name, url: w.baseUrl, fn: () => scrapeWoo(w) })),
   { key: 'mindkits', name: 'Mindkits', url: 'https://www.mindkits.co.nz', fn: scrapeMindkits },
   { key: 'marvle3d', name: 'Marvle3D', url: 'https://marvle3d.co.nz', fn: scrapeMarvle3d },
   { key: 'pbtech', name: 'PB Tech', url: 'https://www.pbtech.co.nz', fn: scrapePbtech },

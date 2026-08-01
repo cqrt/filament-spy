@@ -197,6 +197,8 @@
   <aside id="sidebar">
     <button id="facetToggle">☰ Filters</button>
     <div class="facet" id="facetMaterial"><h3>Material</h3><ul></ul></div>
+    <div class="facet" id="facetDiameter"><h3>Diameter</h3><ul></ul></div>
+    <div class="facet" id="facetWeight"><h3>Weight</h3><ul></ul></div>
     <div class="facet" id="facetColour"><h3>Colour</h3><ul></ul></div>
     <div class="facet" id="facetFinish"><h3>Finish</h3><ul></ul></div>
     <div class="facet" id="facetFormat"><h3>Format</h3><ul></ul></div>
@@ -239,8 +241,8 @@
     '<text x="200" y="150" font-size="64" text-anchor="middle" dominant-baseline="middle">🧵</text></svg>');
 
   const state = {
-    q: '', materials: new Set(), colours: new Set(), finishes: new Set(), formats: new Set(),
-    brands: new Set(), stores: new Set(),
+    q: '', materials: new Set(), diameters: new Set(), weights: new Set(), colours: new Set(),
+    finishes: new Set(), formats: new Set(), brands: new Set(), stores: new Set(),
     sale: false, stock: false, hideSamples: true, sort: 'perkg'
   };
   let DATA = [];
@@ -280,6 +282,8 @@
       if (!tokens.every((t) => p.searchText.includes(t))) return false;
     }
     if (ignoreFacet !== 'materials' && state.materials.size && !state.materials.has(p.material)) return false;
+    if (ignoreFacet !== 'diameters' && state.diameters.size && !state.diameters.has(p.diameter)) return false;
+    if (ignoreFacet !== 'weights' && state.weights.size && !state.weights.has(p.weightLabel)) return false;
     if (ignoreFacet !== 'colours' && state.colours.size && !state.colours.has(p.colour)) return false;
     if (ignoreFacet !== 'finishes' && state.finishes.size && !state.finishes.has(p.finish)) return false;
     if (ignoreFacet !== 'formats' && state.formats.size && !state.formats.has(p.format)) return false;
@@ -306,6 +310,8 @@
   /* ---------- facets ---------- */
   const FACETS = [
     { key: 'materials', el: '#facetMaterial ul', get: (p) => p.material },
+    { key: 'diameters', el: '#facetDiameter ul', get: (p) => p.diameter },
+    { key: 'weights', el: '#facetWeight ul', get: (p) => p.weightLabel },
     { key: 'colours', el: '#facetColour ul', get: (p) => p.colour, colour: true },
     { key: 'finishes', el: '#facetFinish ul', get: (p) => p.finish },
     { key: 'formats', el: '#facetFormat ul', get: (p) => p.format },
@@ -436,6 +442,8 @@
     const p = new URLSearchParams();
     if (state.q) p.set('q', state.q);
     if (state.materials.size) p.set('mat', [...state.materials].join(','));
+    if (state.diameters.size) p.set('dia', [...state.diameters].join(','));
+    if (state.weights.size) p.set('wt', [...state.weights].join(','));
     if (state.colours.size) p.set('col', [...state.colours].join(','));
     if (state.finishes.size) p.set('fin', [...state.finishes].join(','));
     if (state.formats.size) p.set('fmt', [...state.formats].join(','));
@@ -452,6 +460,8 @@
     const p = new URLSearchParams(location.hash.slice(1));
     state.q = p.get('q') || '';
     (p.get('mat') || '').split(',').filter(Boolean).forEach((v) => state.materials.add(v));
+    (p.get('dia') || '').split(',').filter(Boolean).forEach((v) => state.diameters.add(v));
+    (p.get('wt') || '').split(',').filter(Boolean).forEach((v) => state.weights.add(v));
     (p.get('col') || '').split(',').filter(Boolean).forEach((v) => state.colours.add(v));
     (p.get('fin') || '').split(',').filter(Boolean).forEach((v) => state.finishes.add(v));
     (p.get('fmt') || '').split(',').filter(Boolean).forEach((v) => state.formats.add(v));
@@ -489,7 +499,7 @@
   });
   $('#clearFilters').addEventListener('click', () => {
     state.materials.clear(); state.colours.clear(); state.brands.clear(); state.stores.clear();
-    state.finishes.clear(); state.formats.clear();
+    state.finishes.clear(); state.formats.clear(); state.diameters.clear(); state.weights.clear();
     state.q = ''; state.sale = false; state.stock = false; state.hideSamples = true;
     $('#q').value = '';
     $('#saleToggle').classList.remove('on');

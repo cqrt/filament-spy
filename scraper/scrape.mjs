@@ -380,6 +380,19 @@ function detectFormat(text) {
   return null;
 }
 
+// Filament diameter. 3mm is the older name for 2.85mm.
+function detectDiameter(text) {
+  if (/1\.75\s*mm/i.test(text)) return '1.75mm';
+  if (/2\.85\s*mm|\b3\s*mm\b/i.test(text)) return '2.85mm';
+  return null;
+}
+
+// Display label for a spool weight: 0.5kg -> "500g", 10kg -> "10kg".
+function weightLabelOf(weightKg) {
+  if (!weightKg) return null;
+  return weightKg < 1 ? `${Math.round(weightKg * 1000)}g` : `${weightKg}kg`;
+}
+
 /* ------------------------------------------------------------------ */
 /* Filament classification                                             */
 /* ------------------------------------------------------------------ */
@@ -869,6 +882,8 @@ function enrich(p) {
   const pricePerKg = weightKg ? Math.round((p.price / weightKg) * 100) / 100 : null;
   const finish = detectFinish(text);
   const format = detectFormat(text);
+  const diameter = detectDiameter(text);
+  const weightLabel = weightLabelOf(weightKg);
   const clean = {
     id: p.id,
     name: cleanName(p.name),
@@ -877,6 +892,8 @@ function enrich(p) {
     colour,
     colourHex,
     weightKg,
+    weightLabel,
+    diameter,
     finish,
     format,
     store: p.store,
@@ -889,7 +906,7 @@ function enrich(p) {
     currency: p.currency || 'NZD',
     inStock: p.inStock,
   };
-  clean.searchText = `${clean.name} ${clean.brand || ''} ${material} ${colour} ${finish || ''} ${format || ''} ${p.variant || ''}`
+  clean.searchText = `${clean.name} ${clean.brand || ''} ${material} ${colour} ${finish || ''} ${format || ''} ${diameter || ''} ${weightLabel || ''} ${p.variant || ''}`
     .toLowerCase()
     .replace(/\s+/g, ' ')
     .trim();

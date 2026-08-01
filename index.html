@@ -319,7 +319,7 @@
     }
     if (ignoreFacet !== 'materials' && state.materials.size && !state.materials.has(p.material)) return false;
     if (ignoreFacet !== 'diameters' && state.diameters.size && !state.diameters.has(p.diameter)) return false;
-    if (ignoreFacet !== 'colours' && state.colours.size && !state.colours.has(p.colour)) return false;
+    if (ignoreFacet !== 'colours' && state.colours.size && !(p.colours || [p.colour]).some((c) => state.colours.has(c))) return false;
     if (ignoreFacet !== 'finishes' && state.finishes.size && !state.finishes.has(p.finish)) return false;
     if (ignoreFacet !== 'formats' && state.formats.size && !state.formats.has(p.format)) return false;
     if (ignoreFacet !== 'brands' && state.brands.size && !state.brands.has(p.brand)) return false;
@@ -348,7 +348,7 @@
   const FACETS = [
     { key: 'materials', el: '#facetMaterial ul', get: (p) => p.material, limit: 10 },
     { key: 'diameters', el: '#facetDiameter ul', get: (p) => p.diameter },
-    { key: 'colours', el: '#facetColour ul', get: (p) => p.colour, colour: true, limit: 15 },
+    { key: 'colours', el: '#facetColour ul', get: (p) => p.colours || [p.colour], colour: true, limit: 15 },
     { key: 'finishes', el: '#facetFinish ul', get: (p) => p.finish },
     { key: 'formats', el: '#facetFormat ul', get: (p) => p.format },
     { key: 'brands', el: '#facetBrand ul', get: (p) => p.brand || 'Unknown', limit: 10 },
@@ -360,9 +360,10 @@
       const counts = new Map();
       for (const p of DATA) {
         if (!matches(p, f.key)) continue;
-        const v = f.get(p);
-        if (v == null || v === '') continue;
-        counts.set(v, (counts.get(v) || 0) + 1);
+        for (const v of [].concat(f.get(p) ?? [])) {
+          if (v == null || v === '') continue;
+          counts.set(v, (counts.get(v) || 0) + 1);
+        }
       }
       const entries = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
       const limit = f.limit ?? Infinity;

@@ -1,28 +1,28 @@
 {
-  "generatedAt": "2026-08-01T08:37:45.630Z",
+  "generatedAt": "2026-08-01T10:38:34.907Z",
   "stores": {
     "spool": {
       "name": "Spool",
       "url": "https://spool.co.nz",
       "status": "ok",
       "count": 79,
-      "durationMs": 770,
+      "durationMs": 1020,
       "hw": 79
     },
     "bits4bots": {
       "name": "Bits4Bots",
       "url": "https://bits4bots.co.nz",
       "status": "ok",
-      "count": 985,
-      "durationMs": 2795,
+      "count": 957,
+      "durationMs": 3123,
       "hw": 985
     },
     "formtech": {
       "name": "Formtech",
       "url": "https://www.formtech.co.nz",
       "status": "ok",
-      "count": 445,
-      "durationMs": 4252,
+      "count": 432,
+      "durationMs": 3350,
       "hw": 445
     },
     "3dea": {
@@ -30,24 +30,23 @@
       "url": "https://www.3dea.co.nz",
       "status": "stale",
       "count": 674,
-      "error": "HTTP 403 for https://www.3dea.co.nz/shop/wp-json/wc/store/v1/products?per_page=100&page=1",
-      "durationMs": 5478,
+      "durationMs": 66651,
       "hw": 674
     },
     "mindkits": {
       "name": "Mindkits",
       "url": "https://www.mindkits.co.nz",
       "status": "ok",
-      "count": 431,
-      "durationMs": 27565,
+      "count": 377,
+      "durationMs": 31449,
       "hw": 509
     },
     "marvle3d": {
       "name": "Marvle3D",
       "url": "https://marvle3d.co.nz",
-      "status": "stale",
-      "count": 106,
-      "durationMs": 4963,
+      "status": "ok",
+      "count": 134,
+      "durationMs": 20862,
       "hw": 134
     },
     "pbtech": {
@@ -55,7 +54,7 @@
       "url": "https://www.pbtech.co.nz",
       "status": "stale",
       "count": 563,
-      "durationMs": 18448,
+      "durationMs": 43140,
       "hw": 563
     },
     "jaycar": {
@@ -64,9 +63,9 @@
       "status": "error",
       "count": 0,
       "error": "HTTP 403 (DataDome bot protection)",
-      "durationMs": 370,
+      "durationMs": 312,
       "hw": 0
     }
   },
-  "productCount": 3041
+  "productCount": 2974
 }

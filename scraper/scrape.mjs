@@ -201,9 +201,11 @@ const money = (s) => {
 /* ------------------------------------------------------------------ */
 
 const MATERIALS = [
-  ['HTPLA', /\bhtpla\b/i],
-  ['PLA-CF', /\bpla[ -]?cf\b|pla carbon/i],
-  ['PETG-CF', /\bpetg[ -]?cf\b|petg carbon/i],
+  ['HTPLA', /\bhtpla\d*\b/i],
+  ['PLA-CF', /\be?pla[ -]?cf\b|pla carbon/i],
+  ['PETG-CF', /\be?petg[ -]?cf\b|petg carbon|cr[ -]?carbon\b/i], // ePETG-CF, Creality CR-Carbon
+  ['PAHT-CF', /\be?paht[ -]?cf\b/i],
+  ['PPA-CF', /\bppa[ -]?cf\b/i],
   ['PLA+', /\bpla\s*(\+|plus|pro\b)/i],
   ['PETG', /\bpetg\b|\bepetg\b|\brpetg\b/i], // rPETG = recycled PETG (KiwiFil)
   ['ABS+', /\babs\s*(\+|plus)\b/i],
@@ -214,19 +216,25 @@ const MATERIALS = [
   ['TPU', /\btpu\b/i],
   ['TPE', /\btpe\b/i],
   ['HIPS', /\bhips\b/i],
-  ['PVA', /\bpva\b/i],
-  ['PVB', /\bpvb\b/i],
+  ['PVA', /\bpva\b|\baquatek\b/i], // AquaTek = water-soluble support (PVA)
+  ['PVB', /\bpvb\b|\bpolycast\b/i], // Polymaker PolyCast = PVB
   ['PCTG', /\bpctg\b/i],
   ['PC', /\bpc\b|polycarbonate/i],
   ['Nylon', /\bnylon\b|\bpa\d*\b|polyamide/i],
+  ['PEEK', /\be?peek\b/i],
+  ['PPS', /\bpps\b|\bppsf\b|\bppsu\b/i],
+  ['PEI', /\bpei\b|\bultem\b/i],
+  ['PSU', /\bpsu\b/i],
+  ['PEBA', /\bpeba\b/i],
+  ['PVC', /\bpvc\b|polyvinyl chloride/i],
   ['PP', /\bpp\b|polypropylene/i],
   ['POM', /\bpom\b|acetal/i],
   ['PMMA', /\bpmma\b|acrylic/i],
-  ['PET', /\bpet\b(?!g)|\bepet\b/i],
-  // rPLA = recycled PLA (KiwiFil). Known PLA series: Polymaker Panchroma,
-  // 3DEA Silk Rainbow, eSUN eTwinkling/Twinkling, Creality CR-Wood/CR-Silk,
-  // eSUN Marble.
-  ['PLA', /\bpla\b|\bepla\b|\brpla\b|pla[ -]?(metal|wood|silk|gloss|matte|marble|galaxy)|\bpanchroma\b|silk rainbow|e?twinkling\b|cr[ -]?(wood|silk)\b|\bmarble\b/i],
+  ['PET', /\bpet\b(?!g)|\bepet\b|\bemate\b/i], // eSUN eMATE = PET
+  // rPLA = recycled PLA (KiwiFil). Silk is always PLA (no silk PETG exists).
+  // Other PLA series: Panchroma, eTwinkling/Twinkling, CR-Wood/CR-Silk,
+  // eMarble/Marble, Wood, eSUN Copper, MakerBot TOUGH.
+  ['PLA', /\bpla\b|\bepla\b|\brpla\b|pla[ -]?(metal|wood|silk|gloss|matte|marble|galaxy)|\bsilk\b|\bpanchroma\b|e?twinkling\b|cr[ -]?(wood|silk)\b|\be?marble\b|\bwood\b|\bcopper\b|\btough\b/i],
 ];
 
 function detectMaterial(text) {
@@ -282,7 +290,7 @@ const COLOURS = [
   ['Clear', '#dbeafe', ['transparent', 'translucent', 'clear', 'natural']],
   ['Glow', '#bef264', ['glow in the dark', 'luminous', 'glow']],
   ['Rainbow', null, ['rainbow']],
-  ['Multi', null, ['dual colour', 'dual color', 'tri colour', 'tri color', 'multicolour', 'multi colour', 'multi-colour', 'multicolor', 'gradient', 'silk dual', 'colour changing', 'color changing', 'chameleon', 'mixed', 'multi']],
+  ['Multi', null, ['dual colour', 'dual color', 'tri colour', 'tri color', 'multicolour', 'multi colour', 'multi-colour', 'multicolor', 'gradient', 'silk dual', 'colour changing', 'color changing', 'chameleon', 'chromapulse', 'bi-colour', 'bi-color', 'bi colour', 'bi color', 'tri-colour', 'tri-color', 'mixed', 'multi']],
   ['Colour Changing', null, ['uv colour', 'uv color', 'thermal']],
 ];
 
@@ -292,12 +300,22 @@ for (const [canonical, hex, aliases] of COLOURS) {
 }
 COLOUR_LOOKUP.sort((a, b) => b[0].length - a[0].length);
 
-function detectColour(text) {
-  const t = ` ${text.toLowerCase()} `;
+// Multi-colour aware: consume aliases longest-first, collecting every distinct
+// canonical colour. 2+ => display "Multi" and expose components for faceting.
+function detectColours(text) {
+  let remaining = ` ${text.toLowerCase()} `;
+  const found = [];
   for (const [alias, canonical, hex] of COLOUR_LOOKUP) {
-    if (t.includes(alias)) return { colour: canonical, colourHex: hex };
+    if (remaining.includes(alias)) {
+      if (!found.some((f) => f.colour === canonical)) found.push({ colour: canonical, colourHex: hex });
+      remaining = remaining.split(alias).join(' ');
+    }
   }
-  return { colour: 'Other', colourHex: null };
+  if (found.length > 1) {
+    return { colour: 'Multi', colourHex: null, colours: ['Multi', ...found.map((f) => f.colour)] };
+  }
+  if (found.length === 1) return { ...found[0], colours: [found[0].colour] };
+  return { colour: 'Other', colourHex: null, colours: ['Other'] };
 }
 
 function detectWeight(text) {
@@ -415,7 +433,7 @@ function weightLabelOf(weightKg) {
 const FILAMENT_RE =
   /filament|\bpla\b|\bpetg\b|\babs\b|\basa\b|\btpu\b|\btpe\b|\bhips\b|\bpva\b|\bpvb\b|\bpctg\b|nylon|polycarbonate|htpla/i;
 const EXCLUDE_RE =
-  /dryer|nozzle|extruder|toolboard|hotend|stepper|motherboard|mainboard|\bcable|resin\b|\bglue\b|\btape\b|\bmotor\b|sensor|heater|thermistor|build ?plate|enclosure|\blaser\b|\bcnc\b|solder|arduino|raspberry|micro:bit|batter|charger|power supply|\bled\b|\bfan\b|gift ?card|\bkit(s)?\b.*(printer|tool)|printhead|bowden|coupler|fitting|nozz|spring|belt\b|pulley|bearing|magnet|adhesive|sheet\b|mat\b|spool holder|filament runout|detector|swatch/i;
+  /dryer|nozzle|extruder|toolboard|hotend|stepper|motherboard|mainboard|\bcable|resin\b|\bglue\b|\btape\b|\bmotor\b|sensor|heater|thermistor|build ?plate|enclosure|\blaser\b|\bcnc\b|solder|arduino|raspberry|micro:bit|batter|charger|power supply|\bled\b|\bfan\b|gift ?card|\bkit(s)?\b.*(printer|tool)|printhead|bowden|coupler|fitting|nozz|spring|belt\b|pulley|bearing|magnet|adhesive|sheet\b|mat\b|spool holder|filament runout|detector|swatch|espool|master spool|filament (cutter|buffer)|desiccant|drying solution|drywise|dry ?box|cleaning filament/i;
 
 function looksLikeFilament(text) {
   return FILAMENT_RE.test(text) && !EXCLUDE_RE.test(text);
@@ -903,7 +921,7 @@ function enrich(p) {
     detectMaterial(p._descHint || '') ||
     esunSeriesMaterial(text) ||
     'Other';
-  const { colour, colourHex } = detectColour(`${p._colourHint || ''} ${text}`);
+  const { colour, colourHex, colours } = detectColours(`${p._colourHint || ''} ${text}`);
   const weightKg = detectWeight(text) || p._weightHint || null;
   const pricePerKg = weightKg ? Math.round((p.price / weightKg) * 100) / 100 : null;
   const finish = detectFinish(text);
@@ -917,6 +935,7 @@ function enrich(p) {
     material,
     colour,
     colourHex,
+    colours,
     weightKg,
     weightLabel,
     diameter,
@@ -932,7 +951,7 @@ function enrich(p) {
     currency: p.currency || 'NZD',
     inStock: p.inStock,
   };
-  clean.searchText = `${clean.name} ${clean.brand || ''} ${material} ${colour} ${finish || ''} ${format || ''} ${diameter || ''} ${weightLabel || ''} ${p.variant || ''}`
+  clean.searchText = `${clean.name} ${clean.brand || ''} ${material} ${(colours || [colour]).join(' ')} ${finish || ''} ${format || ''} ${diameter || ''} ${weightLabel || ''} ${p.variant || ''}`
     .toLowerCase()
     .replace(/\s+/g, ' ')
     .trim();

@@ -1,23 +1,12 @@
 import { readFileSync } from 'node:fs';
 const d = JSON.parse(readFileSync('data/products.json', 'utf8')).products;
-
-console.log('material=Other total:', d.filter((p) => p.material === 'Other').length);
-const mat = {};
-for (const p of d) mat[p.material] = (mat[p.material] || 0) + 1;
-console.log('materials:', Object.entries(mat).sort((a, b) => b[1] - a[1]));
-
-const fin = {};
-for (const p of d) fin[p.finish || '(none)'] = (fin[p.finish || '(none)'] || 0) + 1;
-console.log('\nfinishes:', fin);
-
-const show = (re, label) => {
-  const hits = d.filter((p) => re.test(p.name));
-  console.log(`\n${label}: ${hits.length}`);
-  for (const p of hits.slice(0, 4)) console.log(`  ${p.material} / ${p.finish || '-'} | ${p.name.slice(0, 65)}`);
-};
-show(/panchroma/i, 'Panchroma');
-show(/twinkling/i, 'Twinkling');
-show(/cr[ -]?(wood|silk)|\bwood\b/i, 'Wood/CR-Wood/CR-Silk');
-show(/marble/i, 'Marble');
-show(/tpu[ -]?9[58]/i, 'TPU 95/98');
-show(/\br(petg|pla)\b/i, 'rPETG/rPLA');
+console.log('material=Other:', d.filter((p) => p.material === 'Other').length);
+const show = (label, rows) => { console.log(`\n${label}:`); for (const p of rows) console.log(`  ${p.material} / ${p.colour} [${(p.colours || []).join('+')}] / ${p.finish || '-'} | ${p.name.slice(0, 60)}`); };
+show('Silk 3dea (was Other)', d.filter((p) => p.store === '3dea' && /^silk/i.test(p.name)).slice(0, 6));
+show('PAHT-CF / PPA-CF', d.filter((p) => /^(PAHT|PPA)-CF$/.test(p.material)));
+show('eMarble / Wood (pbtech/marvle)', d.filter((p) => /emarble|eSun Wood/i.test(p.name)).slice(0, 4));
+show('PEEK / PEI / PPS / PEBA / PVC / PVA-aquatek / PVB-polycast', d.filter((p) => /^(PEEK|PEI|PPS|PSU|PEBA|PVC|PVA|PVB)$/.test(p.material)).slice(0, 10));
+console.log('\nMulti with components:', d.filter((p) => (p.colours || []).length > 2).length, 'products');
+const mats = {};
+for (const p of d) mats[p.material] = (mats[p.material] || 0) + 1;
+console.log('\nmaterials:', Object.entries(mats).sort((a, b) => b[1] - a[1]).slice(0, 30));

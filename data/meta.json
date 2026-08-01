@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-08-01T11:34:45.821Z",
+  "generatedAt": "2026-08-01T12:14:39.286Z",
   "stores": {
     "spool": {
       "name": "Spool",
       "url": "https://spool.co.nz",
       "status": "ok",
       "count": 79,
-      "durationMs": 1051,
+      "durationMs": 621,
       "hw": 79
     },
     "bits4bots": {
@@ -14,7 +14,7 @@
       "url": "https://bits4bots.co.nz",
       "status": "ok",
       "count": 957,
-      "durationMs": 2749,
+      "durationMs": 1124,
       "hw": 985
     },
     "formtech": {
@@ -22,7 +22,7 @@
       "url": "https://www.formtech.co.nz",
       "status": "ok",
       "count": 432,
-      "durationMs": 2914,
+      "durationMs": 3625,
       "hw": 445
     },
     "3dea": {
@@ -30,23 +30,23 @@
       "url": "https://www.3dea.co.nz",
       "status": "ok",
       "count": 674,
-      "durationMs": 58578,
+      "durationMs": 67065,
       "hw": 674
     },
     "mindkits": {
       "name": "Mindkits",
       "url": "https://www.mindkits.co.nz",
       "status": "ok",
-      "count": 415,
-      "durationMs": 35741,
+      "count": 426,
+      "durationMs": 32493,
       "hw": 509
     },
     "marvle3d": {
       "name": "Marvle3D",
       "url": "https://marvle3d.co.nz",
-      "status": "ok",
+      "status": "stale",
       "count": 134,
-      "durationMs": 23489,
+      "durationMs": 6778,
       "hw": 134
     },
     "pbtech": {
@@ -54,8 +54,16 @@
       "url": "https://www.pbtech.co.nz",
       "status": "ok",
       "count": 563,
-      "durationMs": 36889,
+      "durationMs": 36236,
       "hw": 563
+    },
+    "3dmax": {
+      "name": "3D Max",
+      "url": "https://3dmax.co.nz",
+      "status": "ok",
+      "count": 156,
+      "durationMs": 34156,
+      "hw": 156
     },
     "jaycar": {
       "name": "Jaycar",
@@ -63,9 +71,9 @@
       "status": "error",
       "count": 0,
       "error": "HTTP 403 (DataDome bot protection)",
-      "durationMs": 276,
+      "durationMs": 200,
       "hw": 0
     }
   },
-  "productCount": 3012
+  "productCount": 3178
 }

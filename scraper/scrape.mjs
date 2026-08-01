@@ -870,6 +870,67 @@ async function scrapePbtech() {
   return out;
 }
 
+// 3D Max: OpenCart. The parent category lists the whole range (resin is
+// filtered out by the classifier). Sale prices via price-new/price-old.
+async function scrape3dmax() {
+  const store = { key: '3dmax', name: '3D Max', baseUrl: 'https://3dmax.co.nz' };
+  const out = [];
+  const seen = new Set();
+  let firstPageFirst = null;
+  for (let page = 1; page <= 20; page++) {
+    const target = `${store.baseUrl}/filament-resins${page > 1 ? `?page=${page}` : ''}`;
+    let html = '';
+    try {
+      html = await curlText(target, { ua: BROWSER_UA });
+    } catch {
+      html = '';
+    }
+    if (!html) break;
+    const cards = html.split(/<div class="product-layout/).slice(1);
+    if (!cards.length) break;
+    const firstTitle = cards[0].match(/<h4>\s*<a href="[^"]+">([^<]+)/)?.[1];
+    if (page === 1) firstPageFirst = firstTitle;
+    else if (firstTitle && firstTitle === firstPageFirst) break; // wrapped
+    for (const c of cards) {
+      const href = c.match(/<div class="image">\s*<a href="([^"]+)"/)?.[1]?.trim();
+      const title = decodeEntities(c.match(/<h4>\s*<a href="[^"]+">([^<]+)/)?.[1] || '').trim();
+      if (!href || !title || !looksLikeFilament(title)) continue;
+      const pid = c.match(/cart\.add\('(\d+)'/)?.[1] || href.split('/').pop();
+      if (seen.has(pid)) continue;
+      const price = money(
+        c.match(/<span class="price-new">\s*\$?([\d,]+(?:\.\d+)?)/)?.[1] ||
+          c.match(/<p class="price">[\s\S]*?\$?([\d,]+(?:\.\d+)?)/)?.[1]
+      );
+      if (price == null) continue;
+      const was = money(c.match(/<span class="price-old">\s*\$?([\d,]+(?:\.\d+)?)/)?.[1]);
+      // Full-size original: /image/cache/<path>-NNNxNNN.ext -> /image/catalog/<path>.ext
+      const imgM = c.match(/<img src="(https:\/\/3dmax\.co\.nz\/image\/cache\/[^"]+?\.(?:jpe?g|png|webp))"/);
+      const image = imgM
+        ? imgM[1].replace(/\/image\/cache\/(.+?)-\d+x\d+\.(jpe?g|png|webp)$/, '/image/$1.$2')
+        : c.match(/<img src="([^"]+)"/)?.[1] || '';
+      const inStock = /out of stock|pre[- ]?order/i.test(c) ? false : true;
+      seen.add(pid);
+      out.push({
+        id: `${store.key}-${pid}`,
+        name: title,
+        brand: detectBrand(title, null),
+        store: store.key,
+        storeName: store.name,
+        url: href,
+        image,
+        price,
+        wasPrice: was && was > price ? was : null,
+        currency: 'NZD',
+        inStock,
+        variant: '',
+        _descHint: stripHtml(c.match(/<p>([\s\S]*?)<\/p>/)?.[1] || ''),
+      });
+    }
+    await sleep(600);
+  }
+  return out;
+}
+
 async function scrapeJaycar() {
   // Jaycar is behind DataDome bot protection; attempt a plain fetch but expect failure.
   const res = await fetch('https://www.jaycar.co.nz/3d-printing-filament/c/450', {
@@ -932,6 +993,7 @@ const ADAPTERS = [
   { key: 'mindkits', name: 'Mindkits', url: 'https://www.mindkits.co.nz', fn: scrapeMindkits },
   { key: 'marvle3d', name: 'Marvle3D', url: 'https://marvle3d.co.nz', fn: scrapeMarvle3d },
   { key: 'pbtech', name: 'PB Tech', url: 'https://www.pbtech.co.nz', fn: scrapePbtech },
+  { key: '3dmax', name: '3D Max', url: 'https://3dmax.co.nz', fn: scrape3dmax },
   { key: 'jaycar', name: 'Jaycar', url: 'https://www.jaycar.co.nz', fn: scrapeJaycar },
 ];
 

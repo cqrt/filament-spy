@@ -17,6 +17,7 @@ and price-per-kg** across NZ retailers, and surfaces the best deals.
 | [marvle3d.co.nz](https://marvle3d.co.nz) | PrestaShop category pages via curl ([r.jina.ai](https://r.jina.ai) reader proxy as fallback) | ✅ Automatic |
 | [pbtech.co.nz](https://www.pbtech.co.nz) | Category page HTML via curl (browser UA) | ✅ Automatic |
 | [formtech.co.nz](https://www.formtech.co.nz) | Shopify `products.json` API | ✅ Automatic |
+| [3dmax.co.nz](https://3dmax.co.nz) | OpenCart category pages | ✅ Automatic |
 | [jaycar.co.nz](https://www.jaycar.co.nz) | Blocked by DataDome bot protection | ⚠️ Manual file only — see `data/manual/` |
 
 ## How it works

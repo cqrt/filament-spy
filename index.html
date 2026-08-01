@@ -182,6 +182,7 @@
   <div class="toggles">
     <button class="chip-toggle" id="saleToggle" title="Only show items on sale">🏷️ Deals</button>
     <button class="chip-toggle" id="stockToggle" title="Hide out-of-stock items">✓ In stock</button>
+    <button class="chip-toggle" id="sampleToggle" title="Hide sample-size listings (e.g. 50g sample rolls)">🚫 Samples</button>
     <select id="sort" title="Sort results">
       <option value="perkg">Best $/kg</option>
       <option value="price">Price: low → high</option>
@@ -240,7 +241,7 @@
   const state = {
     q: '', materials: new Set(), colours: new Set(), finishes: new Set(), formats: new Set(),
     brands: new Set(), stores: new Set(),
-    sale: false, stock: false, sort: 'perkg'
+    sale: false, stock: false, hideSamples: true, sort: 'perkg'
   };
   let DATA = [];
   let META = null;
@@ -286,6 +287,7 @@
     if (ignoreFacet !== 'stores' && state.stores.size && !state.stores.has(p.store)) return false;
     if (state.sale && !p.wasPrice) return false;
     if (state.stock && p.inStock === false) return false;
+    if (state.hideSamples && (/\bsample\b/i.test(p.name) || (p.weightKg && p.weightKg <= 0.1))) return false;
     return true;
   }
 
@@ -441,6 +443,7 @@
     if (state.stores.size) p.set('store', [...state.stores].join(','));
     if (state.sale) p.set('sale', '1');
     if (state.stock) p.set('stock', '1');
+    if (!state.hideSamples) p.set('samples', '0');
     if (state.sort !== 'perkg') p.set('sort', state.sort);
     history.replaceState(null, '', location.pathname + (p.toString() ? '#' + p : ''));
   }
@@ -456,6 +459,7 @@
     (p.get('store') || '').split(',').filter(Boolean).forEach((v) => state.stores.add(v));
     state.sale = p.get('sale') === '1';
     state.stock = p.get('stock') === '1';
+    state.hideSamples = p.get('samples') !== '0';
     state.sort = p.get('sort') || 'perkg';
   }
 
@@ -476,16 +480,21 @@
     state.stock = !state.stock; e.target.classList.toggle('on', state.stock);
     buildFacets(); render(); syncHash();
   });
+  $('#sampleToggle').addEventListener('click', (e) => {
+    state.hideSamples = !state.hideSamples; e.target.classList.toggle('on', state.hideSamples);
+    buildFacets(); render(); syncHash();
+  });
   $('#sort').addEventListener('change', (e) => {
     state.sort = e.target.value; render(); syncHash();
   });
   $('#clearFilters').addEventListener('click', () => {
     state.materials.clear(); state.colours.clear(); state.brands.clear(); state.stores.clear();
     state.finishes.clear(); state.formats.clear();
-    state.q = ''; state.sale = false; state.stock = false;
+    state.q = ''; state.sale = false; state.stock = false; state.hideSamples = true;
     $('#q').value = '';
     $('#saleToggle').classList.remove('on');
     $('#stockToggle').classList.remove('on');
+    $('#sampleToggle').classList.add('on');
     buildFacets(); render(); syncHash();
   });
   $('#facetToggle').addEventListener('click', () => $('#sidebar').classList.toggle('open'));
@@ -496,6 +505,7 @@
   $('#sort').value = state.sort;
   $('#saleToggle').classList.toggle('on', state.sale);
   $('#stockToggle').classList.toggle('on', state.stock);
+  $('#sampleToggle').classList.toggle('on', state.hideSamples);
   load();
 })();
 </script>

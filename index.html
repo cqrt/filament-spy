@@ -108,11 +108,15 @@
   li.sel .check { background: var(--accent); border-color: var(--accent); color: #111; }
   li.sel .check::after { content: "✓"; }
   .dot { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(255,255,255,.25); flex: 0 0 14px; }
-  #clearFilters {
-    width: 100%; padding: .5rem; border-radius: 8px; border: 1px solid var(--border);
-    background: var(--bg-soft); color: var(--muted); cursor: pointer; font-size: .85rem;
+  .active-filters { display: none; flex-wrap: wrap; gap: .3rem; margin-bottom: 1rem; }
+  .fchip {
+    display: inline-flex; align-items: center; gap: .3rem; font-size: .72rem; font-weight: 600;
+    padding: .22rem .55rem; border-radius: 999px; cursor: pointer;
+    background: rgba(255,180,84,.12); border: 1px solid var(--accent); color: var(--accent);
   }
-  #clearFilters:hover { color: var(--text); border-color: var(--accent); }
+  .fchip:hover { background: var(--accent); color: #111; }
+  .fchip.clearall { background: transparent; border-color: var(--border); color: var(--muted); }
+  .fchip.clearall:hover { border-color: var(--bad); color: var(--bad); background: transparent; }
 
   /* ---------- Status line ---------- */
   .statusline { display: flex; align-items: baseline; gap: .8rem; flex-wrap: wrap; margin-bottom: .9rem; }
@@ -211,6 +215,7 @@
 <div class="layout">
   <aside id="sidebar">
     <button id="facetToggle">☰ Filters</button>
+    <div class="active-filters" id="activeFilters"></div>
     <div class="facet" id="facetMaterial"><h3>Material <span class="chev">▾</span></h3><ul></ul></div>
     <div class="facet" id="facetDiameter"><h3>Diameter <span class="chev">▾</span></h3><ul></ul></div>
     <div class="facet" id="facetWeight">
@@ -229,7 +234,6 @@
     <div class="facet" id="facetFormat"><h3>Format <span class="chev">▾</span></h3><ul></ul></div>
     <div class="facet" id="facetBrand"><h3>Brand <span class="chev">▾</span></h3><ul></ul></div>
     <div class="facet" id="facetStore"><h3>Store <span class="chev">▾</span></h3><ul></ul></div>
-    <button id="clearFilters">Clear all filters</button>
   </aside>
 
   <main>
@@ -462,10 +466,54 @@
     }).join('');
     $('#grid').innerHTML = html;
 
+    renderActiveFilters();
+
     if (META?.generatedAt) {
       const when = new Date(META.generatedAt);
       $('#dataMeta').innerHTML = `prices updated <b>${timeAgo(when)}</b> · ${DATA.length} products tracked`;
     }
+  }
+
+  /* ---------- active-filter chips ---------- */
+  function renderActiveFilters() {
+    const chips = [];
+    if (state.q) chips.push({ kind: 'q', label: `“${state.q}”` });
+    for (const v of state.materials) chips.push({ kind: 'materials', value: v, label: v });
+    for (const v of state.diameters) chips.push({ kind: 'diameters', value: v, label: v });
+    if (state.wloIdx > 0 || state.whiIdx < WEIGHT_STOPS.length - 1) {
+      chips.push({ kind: 'weight', label: wRangeLabel(state.wloIdx, state.whiIdx) });
+    }
+    for (const v of state.colours) chips.push({ kind: 'colours', value: v, label: v });
+    for (const v of state.finishes) chips.push({ kind: 'finishes', value: v, label: v });
+    for (const v of state.formats) chips.push({ kind: 'formats', value: v, label: v });
+    for (const v of state.brands) chips.push({ kind: 'brands', value: v, label: v });
+    for (const v of state.stores) chips.push({ kind: 'stores', value: v, label: storeNameOf(v) });
+    if (state.sale) chips.push({ kind: 'sale', label: 'On sale' });
+    if (state.stock) chips.push({ kind: 'stock', label: 'In stock' });
+    if (!state.hideSamples) chips.push({ kind: 'samples', label: 'Samples shown' });
+
+    const el = $('#activeFilters');
+    if (!chips.length) { el.innerHTML = ''; el.style.display = 'none'; return; }
+    el.style.display = 'flex';
+    el.innerHTML = chips.map((c, i) =>
+      `<button class="fchip" data-i="${i}" title="Remove filter">${esc(c.label)} <b>×</b></button>`
+    ).join('') + `<button class="fchip clearall" data-clear="1" title="Clear all filters">Clear all ×</button>`;
+    el._chips = chips;
+  }
+
+  function clearAllFilters() {
+    state.materials.clear(); state.colours.clear(); state.brands.clear(); state.stores.clear();
+    state.finishes.clear(); state.formats.clear(); state.diameters.clear();
+    state.wloIdx = 0; state.whiIdx = WEIGHT_STOPS.length - 1; state.expanded.clear();
+    state.q = ''; state.sale = false; state.stock = false; state.hideSamples = true;
+    $('#q').value = '';
+    $('#weightLo').value = '0';
+    $('#weightHi').value = String(WEIGHT_STOPS.length - 1);
+    syncWeightUI();
+    $('#saleToggle').classList.remove('on');
+    $('#stockToggle').classList.remove('on');
+    $('#sampleToggle').classList.add('on');
+    buildFacets(); render(); syncHash();
   }
 
   function timeAgo(date) {
@@ -574,18 +622,23 @@
   const applyWeight = () => { buildFacets(); render(); syncHash(); };
   $('#weightLo').addEventListener('change', applyWeight);
   $('#weightHi').addEventListener('change', applyWeight);
-  $('#clearFilters').addEventListener('click', () => {
-    state.materials.clear(); state.colours.clear(); state.brands.clear(); state.stores.clear();
-    state.finishes.clear(); state.formats.clear(); state.diameters.clear();
-    state.wloIdx = 0; state.whiIdx = WEIGHT_STOPS.length - 1; state.expanded.clear();
-    state.q = ''; state.sale = false; state.stock = false; state.hideSamples = true;
-    $('#q').value = '';
-    $('#weightLo').value = '0';
-    $('#weightHi').value = String(WEIGHT_STOPS.length - 1);
-    syncWeightUI();
-    $('#saleToggle').classList.remove('on');
-    $('#stockToggle').classList.remove('on');
-    $('#sampleToggle').classList.add('on');
+  $('#activeFilters').addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    if (btn.dataset.clear) { clearAllFilters(); return; }
+    const c = $('#activeFilters')._chips?.[+btn.dataset.i];
+    if (!c) return;
+    switch (c.kind) {
+      case 'q': state.q = ''; $('#q').value = ''; break;
+      case 'weight':
+        state.wloIdx = 0; state.whiIdx = WEIGHT_STOPS.length - 1;
+        $('#weightLo').value = '0'; $('#weightHi').value = String(WEIGHT_STOPS.length - 1);
+        syncWeightUI(); break;
+      case 'sale': state.sale = false; $('#saleToggle').classList.remove('on'); break;
+      case 'stock': state.stock = false; $('#stockToggle').classList.remove('on'); break;
+      case 'samples': state.hideSamples = true; $('#sampleToggle').classList.add('on'); break;
+      default: state[c.kind].delete(c.value);
+    }
     buildFacets(); render(); syncHash();
   });
   $('#facetToggle').addEventListener('click', () => $('#sidebar').classList.toggle('open'));

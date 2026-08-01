@@ -770,8 +770,10 @@ async function scrapePbtech() {
         const pbStock = parseInt(c.match(/data-stock-pb="[^"]*?(\d+)/)?.[1] || '0', 10);
         const otherStock = parseInt(c.match(/data-stock-other="[^"]*?(\d+)/)?.[1] || '0', 10);
         const inStock = pbStock > 0 || otherStock > 0 ? true : c.includes('js-stock-info') ? false : null;
-        const image =
+        // Full-size primary image: /thumbs/150/<folder>/<code>.webp -> /imgprod/<folder>/<code>.jpg
+        const thumb =
           c.match(/<source[^>]*srcset="(https:\/\/www\.pbtech\.co\.nz\/thumbs\/150\/[^"\s]+?\.webp[^"\s]*)"/)?.[1] || '';
+        const image = thumb ? thumb.replace('/thumbs/150/', '/imgprod/').replace(/\.webp.*$/, '.jpg') : '';
         seen.add(code);
         out.push({
           id: `${store.key}-${code}`,

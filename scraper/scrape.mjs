@@ -413,6 +413,7 @@ function looksLikeFilament(text) {
 const SHOPIFY = [
   { key: 'spool', name: 'Spool', baseUrl: 'https://spool.co.nz', defaultWeightKg: 1 },
   { key: 'bits4bots', name: 'Bits4Bots', baseUrl: 'https://bits4bots.co.nz' },
+  { key: 'formtech', name: 'Formtech', baseUrl: 'https://www.formtech.co.nz' },
 ];
 
 // Ask the Shopify CDN for a ~480px render instead of the full-size original.

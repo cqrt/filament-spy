@@ -1,14 +1,12 @@
 import { readFileSync } from 'node:fs';
 const d = JSON.parse(readFileSync('data/products.json', 'utf8')).products;
-const dia = {}, wt = {};
-for (const p of d) {
-  dia[p.diameter || '(none)'] = (dia[p.diameter || '(none)'] || 0) + 1;
-  wt[p.weightLabel || '(none)'] = (wt[p.weightLabel || '(none)'] || 0) + 1;
-}
-console.log('diameter:', dia);
-console.log('weight labels:', wt);
-// spot checks
-console.log('\n0.5kg products → label:');
-for (const p of d.filter((p) => p.weightKg === 0.5).slice(0, 3)) console.log(' ', p.weightLabel, '|', p.name.slice(0, 60));
-console.log('\n2.85mm sample:');
-for (const p of d.filter((p) => p.diameter === '2.85mm').slice(0, 4)) console.log(' ', p.store, '|', p.name.slice(0, 70));
+const ft = d.filter((p) => p.store === 'formtech');
+console.log('formtech:', ft.length);
+const brands = {};
+for (const p of ft) brands[p.brand || 'null'] = (brands[p.brand || 'null'] || 0) + 1;
+console.log('brands:', Object.entries(brands).sort((a, b) => b[1] - a[1]).slice(0, 10));
+const noImg = ft.filter((p) => !p.image.startsWith('data/images/')).length;
+const noWt = ft.filter((p) => !p.weightKg).length;
+const badPrice = ft.filter((p) => !(p.price > 0)).length;
+console.log('missing local image:', noImg, '| missing weight:', noWt, '| bad price:', badPrice);
+for (const p of ft.slice(0, 6)) console.log(`  $${p.price} | ${p.brand} | ${p.name.slice(0, 65)} | ${p.material} | ${p.weightLabel}`);

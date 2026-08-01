@@ -406,6 +406,10 @@ function looksLikeFilament(text) {
   return FILAMENT_RE.test(text) && !EXCLUDE_RE.test(text);
 }
 
+// Sample-size listings (50g "Sample - ..." rolls, 0.1kg cleaning filament) —
+// pointless in a price comparison, so they're dropped from the data entirely.
+const isSampleProduct = (p) => /\bsample\b/i.test(p.name) || (p.weightKg != null && p.weightKg <= 0.1);
+
 /* ------------------------------------------------------------------ */
 /* Store adapters                                                      */
 /* ------------------------------------------------------------------ */
@@ -992,6 +996,11 @@ async function main() {
   );
   products.sort((a, b) => (a.pricePerKg ?? a.price) - (b.pricePerKg ?? b.price));
 
+  // Drop sample-size listings entirely (50g rolls, cleaning filament).
+  const keepProducts = products.filter((p) => !isSampleProduct(p));
+  const dropped = products.length - keepProducts.length;
+  if (dropped) console.log(`Dropped ${dropped} sample-size listings`);
+
   if (only) {
     console.log(`\nONLY mode (${only.join(', ')}): not writing data files. Sample:`);
     for (const p of products.slice(0, 20)) {
@@ -1002,20 +1011,20 @@ async function main() {
   }
 
   // Cache product images into the repo (one download per unique image, ever).
-  if (!process.env.SKIP_IMAGES) await cacheImages(products);
+  if (!process.env.SKIP_IMAGES) await cacheImages(keepProducts);
 
   await mkdir(DATA_DIR, { recursive: true });
   const generatedAt = new Date().toISOString();
   await writeFile(
     path.join(DATA_DIR, 'products.json'),
-    JSON.stringify({ generatedAt, products }, null, 0)
+    JSON.stringify({ generatedAt, products: keepProducts }, null, 0)
   );
   await writeFile(
     path.join(DATA_DIR, 'meta.json'),
-    JSON.stringify({ generatedAt, stores, productCount: products.length }, null, 2)
+    JSON.stringify({ generatedAt, stores, productCount: keepProducts.length }, null, 2)
   );
 
-  console.log(`\nDone: ${products.length} products from ${Object.keys(stores).length} stores`);
+  console.log(`\nDone: ${keepProducts.length} products from ${Object.keys(stores).length} stores`);
   console.log(`Wrote ${path.relative(ROOT, path.join(DATA_DIR, 'products.json'))} and meta.json`);
 
   // Non-zero exit only if every automatic store failed.

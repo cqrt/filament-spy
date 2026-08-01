@@ -201,7 +201,6 @@
   <div class="toggles">
     <button class="chip-toggle" id="saleToggle" title="Only show items on sale">🏷️ Deals</button>
     <button class="chip-toggle" id="stockToggle" title="Hide out-of-stock items">✓ In stock</button>
-    <button class="chip-toggle" id="sampleToggle" title="Hide sample-size listings (e.g. 50g sample rolls)">🚫 Samples</button>
     <select id="sort" title="Sort results">
       <option value="perkg">Best $/kg</option>
       <option value="price">Price: low → high</option>
@@ -280,7 +279,7 @@
     q: '', materials: new Set(), diameters: new Set(), colours: new Set(),
     finishes: new Set(), formats: new Set(), brands: new Set(), stores: new Set(),
     wloIdx: 0, whiIdx: WEIGHT_STOPS.length - 1, expanded: new Set(),
-    sale: false, stock: false, hideSamples: true, sort: 'perkg'
+    sale: false, stock: false, sort: 'perkg'
   };
   let DATA = [];
   let META = null;
@@ -327,7 +326,6 @@
     if (ignoreFacet !== 'stores' && state.stores.size && !state.stores.has(p.store)) return false;
     if (state.sale && !p.wasPrice) return false;
     if (state.stock && p.inStock === false) return false;
-    if (state.hideSamples && (/\bsample\b/i.test(p.name) || (p.weightKg && p.weightKg <= 0.1))) return false;
     const wlo = WEIGHT_STOPS[state.wloIdx];
     const whi = WEIGHT_STOPS[state.whiIdx];
     if ((wlo > 0 || whi < WEIGHT_STOPS.at(-1)) && p.weightKg != null && (p.weightKg < wlo || p.weightKg > whi)) return false;
@@ -491,7 +489,6 @@
     for (const v of state.stores) chips.push({ kind: 'stores', value: v, label: storeNameOf(v) });
     if (state.sale) chips.push({ kind: 'sale', label: 'On sale' });
     if (state.stock) chips.push({ kind: 'stock', label: 'In stock' });
-    if (!state.hideSamples) chips.push({ kind: 'samples', label: 'Samples shown' });
 
     const el = $('#activeFilters');
     if (!chips.length) { el.innerHTML = ''; el.style.display = 'none'; return; }
@@ -506,14 +503,13 @@
     state.materials.clear(); state.colours.clear(); state.brands.clear(); state.stores.clear();
     state.finishes.clear(); state.formats.clear(); state.diameters.clear();
     state.wloIdx = 0; state.whiIdx = WEIGHT_STOPS.length - 1; state.expanded.clear();
-    state.q = ''; state.sale = false; state.stock = false; state.hideSamples = true;
+    state.q = ''; state.sale = false; state.stock = false;
     $('#q').value = '';
     $('#weightLo').value = '0';
     $('#weightHi').value = String(WEIGHT_STOPS.length - 1);
     syncWeightUI();
     $('#saleToggle').classList.remove('on');
     $('#stockToggle').classList.remove('on');
-    $('#sampleToggle').classList.add('on');
     buildFacets(); render(); syncHash();
   }
 
@@ -553,7 +549,6 @@
     if (state.stores.size) p.set('store', [...state.stores].join(','));
     if (state.sale) p.set('sale', '1');
     if (state.stock) p.set('stock', '1');
-    if (!state.hideSamples) p.set('samples', '0');
     if (state.sort !== 'perkg') p.set('sort', state.sort);
     history.replaceState(null, '', location.pathname + (p.toString() ? '#' + p : ''));
   }
@@ -572,7 +567,6 @@
     (p.get('store') || '').split(',').filter(Boolean).forEach((v) => state.stores.add(v));
     state.sale = p.get('sale') === '1';
     state.stock = p.get('stock') === '1';
-    state.hideSamples = p.get('samples') !== '0';
     state.sort = p.get('sort') || 'perkg';
   }
 
@@ -591,10 +585,6 @@
   });
   $('#stockToggle').addEventListener('click', (e) => {
     state.stock = !state.stock; e.target.classList.toggle('on', state.stock);
-    buildFacets(); render(); syncHash();
-  });
-  $('#sampleToggle').addEventListener('click', (e) => {
-    state.hideSamples = !state.hideSamples; e.target.classList.toggle('on', state.hideSamples);
     buildFacets(); render(); syncHash();
   });
   $('#sort').addEventListener('change', (e) => {
@@ -637,7 +627,6 @@
         syncWeightUI(); break;
       case 'sale': state.sale = false; $('#saleToggle').classList.remove('on'); break;
       case 'stock': state.stock = false; $('#stockToggle').classList.remove('on'); break;
-      case 'samples': state.hideSamples = true; $('#sampleToggle').classList.add('on'); break;
       default: state[c.kind].delete(c.value);
     }
     buildFacets(); render(); syncHash();
@@ -653,7 +642,6 @@
   syncWeightUI();
   $('#saleToggle').classList.toggle('on', state.sale);
   $('#stockToggle').classList.toggle('on', state.stock);
-  $('#sampleToggle').classList.toggle('on', state.hideSamples);
   load();
 })();
 </script>

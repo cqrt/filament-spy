@@ -722,6 +722,78 @@ async function scrapeMarvle3d() {
   return out;
 }
 
+// PB Tech: custom ASP.NET site, server-rendered cards, GST-inc price in the
+// ginc block, stock counts in data attributes, pagination via ?pg=N.
+const PBTECH_CATEGORIES = [
+  'category/toys-hobbies-stem/3d-printers-cutters-engravers/3d-printer-filament-resins/3d-printer-filament',
+  'category/consumables/ink/3d-printing-filament',
+];
+
+async function scrapePbtech() {
+  const store = { key: 'pbtech', name: 'PB Tech', baseUrl: 'https://www.pbtech.co.nz' };
+  const out = [];
+  const seen = new Set();
+  for (const cat of PBTECH_CATEGORIES) {
+    let firstPageFirstCode = null;
+    for (let pg = 1; pg <= 30; pg++) {
+      const target = `${store.baseUrl}/${cat}${pg > 1 ? `?pg=${pg}` : ''}`;
+      // Intermittent "Managed Security Challenge" (JS) — retry with backoff,
+      // keep whatever was collected so far.
+      let html = '';
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (attempt) await sleep(3000 * attempt);
+        try {
+          html = await curlText(target, { ua: BROWSER_UA });
+        } catch {
+          html = '';
+        }
+        if (html && !/Managed Security Challenge|Just a moment|Enable JavaScript and cookies/i.test(html)) break;
+        html = '';
+      }
+      if (!html) break;
+      const cards = html.split(/<div class="js-product-card/).slice(1);
+      if (!cards.length) break;
+      const firstCode = cards[0].match(/data-product-code="([^"]+)"/)?.[1];
+      if (pg === 1) firstPageFirstCode = firstCode;
+      else if (firstCode && firstCode === firstPageFirstCode) break; // wrapped
+      for (const c of cards) {
+        const code = c.match(/data-product-code="([^"]+)"/)?.[1];
+        if (!code || seen.has(code)) continue;
+        const title = decodeEntities(
+          c.match(/class="product-image-thumb[^"]*"[^>]*alt="([^"]*)"/)?.[1] || ''
+        ).trim();
+        if (!title || !looksLikeFilament(title)) continue;
+        const href = c.match(/<a href="(product\/[^"]+)" class="js-product-link/)?.[1];
+        const gincIdx = c.indexOf('class="ginc"');
+        const price = money((gincIdx >= 0 ? c.slice(gincIdx) : c).match(/full-price">\s*\$?([\d,]+(?:\.\d+)?)/)?.[1]);
+        if (price == null) continue;
+        const pbStock = parseInt(c.match(/data-stock-pb="[^"]*?(\d+)/)?.[1] || '0', 10);
+        const otherStock = parseInt(c.match(/data-stock-other="[^"]*?(\d+)/)?.[1] || '0', 10);
+        const inStock = pbStock > 0 || otherStock > 0 ? true : c.includes('js-stock-info') ? false : null;
+        const image =
+          c.match(/<source[^>]*srcset="(https:\/\/www\.pbtech\.co\.nz\/thumbs\/150\/[^"\s]+?\.webp[^"\s]*)"/)?.[1] || '';
+        seen.add(code);
+        out.push({
+          id: `${store.key}-${code}`,
+          name: title,
+          brand: detectBrand(title, null),
+          store: store.key,
+          storeName: store.name,
+          url: href ? `${store.baseUrl}/${href}` : '',
+          image,
+          price,
+          wasPrice: null, // category pages show a single "PB Tech price"
+          currency: 'NZD',
+          inStock,
+          variant: '',
+        });
+      }
+      await sleep(600);
+    }
+  }
+  return out;
+}
+
 async function scrapeJaycar() {
   // Jaycar is behind DataDome bot protection; attempt a plain fetch but expect failure.
   const res = await fetch('https://www.jaycar.co.nz/3d-printing-filament/c/450', {
@@ -783,6 +855,7 @@ const ADAPTERS = [
   { key: '3dea', name: '3DEA', url: 'https://www.3dea.co.nz', fn: scrape3dea },
   { key: 'mindkits', name: 'Mindkits', url: 'https://www.mindkits.co.nz', fn: scrapeMindkits },
   { key: 'marvle3d', name: 'Marvle3D', url: 'https://marvle3d.co.nz', fn: scrapeMarvle3d },
+  { key: 'pbtech', name: 'PB Tech', url: 'https://www.pbtech.co.nz', fn: scrapePbtech },
   { key: 'jaycar', name: 'Jaycar', url: 'https://www.jaycar.co.nz', fn: scrapeJaycar },
 ];
 

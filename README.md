@@ -15,6 +15,7 @@ and price-per-kg** across NZ retailers, and surfaces the best deals.
 | [3dea.co.nz](https://www.3dea.co.nz) | WooCommerce Store API | ✅ Automatic |
 | [mindkits.co.nz](https://www.mindkits.co.nz) | Category page HTML | ✅ Automatic |
 | [marvle3d.co.nz](https://marvle3d.co.nz) | PrestaShop category pages via curl ([r.jina.ai](https://r.jina.ai) reader proxy as fallback) | ✅ Automatic |
+| [pbtech.co.nz](https://www.pbtech.co.nz) | Category page HTML via curl (browser UA) | ✅ Automatic |
 | [jaycar.co.nz](https://www.jaycar.co.nz) | Blocked by DataDome bot protection | ⚠️ Manual file only — see `data/manual/` |
 
 ## How it works

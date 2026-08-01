@@ -205,10 +205,12 @@ const MATERIALS = [
   ['PLA-CF', /\bpla[ -]?cf\b|pla carbon/i],
   ['PETG-CF', /\bpetg[ -]?cf\b|petg carbon/i],
   ['PLA+', /\bpla\s*(\+|plus|pro\b)/i],
-  ['PETG', /\bpetg\b|\bepetg\b/i],
+  ['PETG', /\bpetg\b|\bepetg\b|\brpetg\b/i], // rPETG = recycled PETG (KiwiFil)
   ['ABS+', /\babs\s*(\+|plus)\b/i],
   ['ABS', /\babs\b|\babsmax\b|\beabs\b/i],
   ['ASA', /\basa\b/i],
+  ['TPU 95A', /\btpu[ -]?95a?\b/i],
+  ['TPU 98A', /\btpu[ -]?98a?\b/i],
   ['TPU', /\btpu\b/i],
   ['TPE', /\btpe\b/i],
   ['HIPS', /\bhips\b/i],
@@ -221,7 +223,10 @@ const MATERIALS = [
   ['POM', /\bpom\b|acetal/i],
   ['PMMA', /\bpmma\b|acrylic/i],
   ['PET', /\bpet\b(?!g)|\bepet\b/i],
-  ['PLA', /\bpla\b|\bepla\b|pla[ -]?(metal|wood|silk|gloss|matte|marble|galaxy)/i],
+  // rPLA = recycled PLA (KiwiFil). Known PLA series: Polymaker Panchroma,
+  // 3DEA Silk Rainbow, eSUN eTwinkling/Twinkling, Creality CR-Wood/CR-Silk,
+  // eSUN Marble.
+  ['PLA', /\bpla\b|\bepla\b|\brpla\b|pla[ -]?(metal|wood|silk|gloss|matte|marble|galaxy)|\bpanchroma\b|silk rainbow|e?twinkling\b|cr[ -]?(wood|silk)\b|\bmarble\b/i],
 ];
 
 function detectMaterial(text) {
@@ -378,6 +383,8 @@ function cleanName(name) {
 function detectFinish(text) {
   if (/\bsilk\b/i.test(text)) return 'Silk';
   if (/\bmatte\b/i.test(text)) return 'Matte';
+  if (/\bwood\b|\bcr[ -]?wood\b/i.test(text)) return 'Wood';
+  if (/\bmarble\b/i.test(text)) return 'Marble';
   return null;
 }
 

@@ -211,8 +211,13 @@ const MATERIALS = [
   ['ABS+', /\babs\s*(\+|plus)\b/i],
   ['ABS', /\babs\b|\babsmax\b|\beabs\b/i],
   ['ASA', /\basa\b/i],
-  ['TPU 95A', /\btpu[ -]?95a?\b/i],
-  ['TPU 98A', /\btpu[ -]?98a?\b/i],
+  ['TPU 85A', /\be?tpu[ -]?85a?\b/i],
+  ['TPU 87A', /\be?tpu[ -]?87a?\b/i],
+  ['TPU 90A', /\be?tpu[ -]?90a?\b/i], // Polyflex TPU90
+  ['TPU 92A', /\be?tpu[ -]?92a?\b/i],
+  ['TPU 95A', /\be?tpu[ -]?95a?\b|\bcr[ -]?tpu\b/i], // eTPU 95A, Creality CR-TPU
+  ['TPU 98A', /\be?tpu[ -]?98a?\b/i],
+  ['TPU-LW', /\btpu[ -]?lw\b/i],
   ['TPU', /\btpu\b/i],
   ['TPE', /\btpe\b/i],
   ['HIPS', /\bhips\b/i],

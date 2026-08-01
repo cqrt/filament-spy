@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-08-01T05:53:14.637Z",
+  "generatedAt": "2026-08-01T08:37:45.630Z",
   "stores": {
     "spool": {
       "name": "Spool",
       "url": "https://spool.co.nz",
       "status": "ok",
       "count": 79,
-      "durationMs": 833,
+      "durationMs": 770,
       "hw": 79
     },
     "bits4bots": {
@@ -14,7 +14,7 @@
       "url": "https://bits4bots.co.nz",
       "status": "ok",
       "count": 985,
-      "durationMs": 1173,
+      "durationMs": 2795,
       "hw": 985
     },
     "formtech": {
@@ -22,39 +22,40 @@
       "url": "https://www.formtech.co.nz",
       "status": "ok",
       "count": 445,
-      "durationMs": 3119,
+      "durationMs": 4252,
       "hw": 445
     },
     "3dea": {
       "name": "3DEA",
       "url": "https://www.3dea.co.nz",
-      "status": "ok",
+      "status": "stale",
       "count": 674,
-      "durationMs": 65384,
+      "error": "HTTP 403 for https://www.3dea.co.nz/shop/wp-json/wc/store/v1/products?per_page=100&page=1",
+      "durationMs": 5478,
       "hw": 674
     },
     "mindkits": {
       "name": "Mindkits",
       "url": "https://www.mindkits.co.nz",
       "status": "ok",
-      "count": 420,
-      "durationMs": 32888,
+      "count": 431,
+      "durationMs": 27565,
       "hw": 509
     },
     "marvle3d": {
       "name": "Marvle3D",
       "url": "https://marvle3d.co.nz",
-      "status": "ok",
+      "status": "stale",
       "count": 106,
-      "durationMs": 14080,
+      "durationMs": 4963,
       "hw": 134
     },
     "pbtech": {
       "name": "PB Tech",
       "url": "https://www.pbtech.co.nz",
-      "status": "ok",
+      "status": "stale",
       "count": 563,
-      "durationMs": 43071,
+      "durationMs": 18448,
       "hw": 563
     },
     "jaycar": {
@@ -63,9 +64,9 @@
       "status": "error",
       "count": 0,
       "error": "HTTP 403 (DataDome bot protection)",
-      "durationMs": 350,
+      "durationMs": 370,
       "hw": 0
     }
   },
-  "productCount": 3029
+  "productCount": 3041
 }

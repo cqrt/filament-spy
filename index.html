@@ -92,8 +92,15 @@
   .facet.collapsed h3 .chev { transform: rotate(-90deg); }
   .facet.collapsed ul, .facet.collapsed .rangewrap { display: none; }
   .facet h3 .val { color: var(--accent); font-weight: 600; text-transform: none; letter-spacing: 0; }
-  #weightMin { width: 100%; accent-color: var(--accent); cursor: pointer; }
   .range-marks { display: flex; justify-content: space-between; font-size: .68rem; color: var(--muted); margin-top: .1rem; }
+  .dualslider { position: relative; height: 26px; margin: .15rem 0 .05rem; }
+  .dualslider .ds-track { position: absolute; left: 0; right: 0; top: 50%; height: 4px; transform: translateY(-50%); background: var(--border); border-radius: 2px; }
+  .dualslider .ds-fill { position: absolute; top: 0; bottom: 0; background: var(--accent); border-radius: 2px; }
+  .dualslider input[type="range"] { position: absolute; left: 0; top: 0; width: 100%; height: 26px; margin: 0; background: none; pointer-events: none; -webkit-appearance: none; appearance: none; }
+  .dualslider input[type="range"]::-webkit-slider-runnable-track { background: transparent; }
+  .dualslider input[type="range"]::-moz-range-track { background: transparent; }
+  .dualslider input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; pointer-events: auto; width: 15px; height: 15px; border-radius: 50%; background: var(--accent); border: 2px solid var(--bg); cursor: grab; margin-top: 0; }
+  .dualslider input[type="range"]::-moz-range-thumb { pointer-events: auto; width: 13px; height: 13px; border-radius: 50%; background: var(--accent); border: 2px solid var(--bg); cursor: grab; }
   .check {
     width: 15px; height: 15px; border: 1.5px solid var(--border); border-radius: 4px;
     flex: 0 0 15px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px;
@@ -209,7 +216,11 @@
     <div class="facet" id="facetWeight">
       <h3>Weight <span class="val" id="weightVal">any</span> <span class="chev">▾</span></h3>
       <div class="rangewrap">
-        <input type="range" id="weightMin" min="0" max="8" value="0" step="1" aria-label="Minimum spool weight">
+        <div class="dualslider">
+          <div class="ds-track"><div class="ds-fill" id="dsFill"></div></div>
+          <input type="range" id="weightLo" min="0" max="8" step="1" value="0" aria-label="Minimum spool weight">
+          <input type="range" id="weightHi" min="0" max="8" step="1" value="8" aria-label="Maximum spool weight">
+        </div>
         <div class="range-marks"><span>250g</span><span>1kg</span><span>10kg+</span></div>
       </div>
     </div>
@@ -255,12 +266,15 @@
     '<text x="200" y="150" font-size="64" text-anchor="middle" dominant-baseline="middle">🧵</text></svg>');
 
   const WEIGHT_STOPS = [0, 0.25, 0.5, 1, 2, 3, 5, 10, 40];
-  const WEIGHT_LABELS = ['any', '≥250g', '≥500g', '≥1kg', '≥2kg', '≥3kg', '≥5kg', '≥10kg', '≥10kg+'];
+  const WNAMES = ['any', '250g', '500g', '1kg', '2kg', '3kg', '5kg', '10kg', '10kg+'];
+  const wRangeLabel = (lo, hi) =>
+    lo === 0 && hi === WEIGHT_STOPS.length - 1 ? 'any' :
+    lo === hi ? `${WNAMES[lo]} only` : `${WNAMES[lo]} – ${WNAMES[hi]}`;
 
   const state = {
     q: '', materials: new Set(), diameters: new Set(), colours: new Set(),
     finishes: new Set(), formats: new Set(), brands: new Set(), stores: new Set(),
-    wminIdx: 0, expanded: new Set(),
+    wloIdx: 0, whiIdx: WEIGHT_STOPS.length - 1, expanded: new Set(),
     sale: false, stock: false, hideSamples: true, sort: 'perkg'
   };
   let DATA = [];
@@ -309,8 +323,9 @@
     if (state.sale && !p.wasPrice) return false;
     if (state.stock && p.inStock === false) return false;
     if (state.hideSamples && (/\bsample\b/i.test(p.name) || (p.weightKg && p.weightKg <= 0.1))) return false;
-    const wmin = WEIGHT_STOPS[state.wminIdx];
-    if (wmin > 0 && p.weightKg != null && p.weightKg < wmin) return false;
+    const wlo = WEIGHT_STOPS[state.wloIdx];
+    const whi = WEIGHT_STOPS[state.whiIdx];
+    if ((wlo > 0 || whi < WEIGHT_STOPS.at(-1)) && p.weightKg != null && (p.weightKg < wlo || p.weightKg > whi)) return false;
     return true;
   }
 
@@ -480,7 +495,8 @@
     if (state.q) p.set('q', state.q);
     if (state.materials.size) p.set('mat', [...state.materials].join(','));
     if (state.diameters.size) p.set('dia', [...state.diameters].join(','));
-    if (state.wminIdx) p.set('wmin', String(state.wminIdx));
+    if (state.wloIdx > 0) p.set('wlo', String(state.wloIdx));
+    if (state.whiIdx < WEIGHT_STOPS.length - 1) p.set('whi', String(state.whiIdx));
     if (state.colours.size) p.set('col', [...state.colours].join(','));
     if (state.finishes.size) p.set('fin', [...state.finishes].join(','));
     if (state.formats.size) p.set('fmt', [...state.formats].join(','));
@@ -498,7 +514,8 @@
     state.q = p.get('q') || '';
     (p.get('mat') || '').split(',').filter(Boolean).forEach((v) => state.materials.add(v));
     (p.get('dia') || '').split(',').filter(Boolean).forEach((v) => state.diameters.add(v));
-    state.wminIdx = Math.min(WEIGHT_STOPS.length - 1, Math.max(0, +(p.get('wmin') || 0) || 0));
+    state.wloIdx = Math.min(WEIGHT_STOPS.length - 1, Math.max(0, +(p.get('wlo') ?? p.get('wmin') ?? 0) || 0));
+    state.whiIdx = Math.min(WEIGHT_STOPS.length - 1, Math.max(state.wloIdx, p.get('whi') != null ? +p.get('whi') : WEIGHT_STOPS.length - 1));
     (p.get('col') || '').split(',').filter(Boolean).forEach((v) => state.colours.add(v));
     (p.get('fin') || '').split(',').filter(Boolean).forEach((v) => state.finishes.add(v));
     (p.get('fmt') || '').split(',').filter(Boolean).forEach((v) => state.formats.add(v));
@@ -534,21 +551,38 @@
   $('#sort').addEventListener('change', (e) => {
     state.sort = e.target.value; render(); syncHash();
   });
-  $('#weightMin').addEventListener('input', (e) => {
-    $('#weightVal').textContent = WEIGHT_LABELS[+e.target.value];
+  function syncWeightUI() {
+    const lo = +$('#weightLo').value;
+    const hi = +$('#weightHi').value;
+    state.wloIdx = lo;
+    state.whiIdx = hi;
+    $('#weightVal').textContent = wRangeLabel(lo, hi);
+    $('#dsFill').style.left = (lo / (WEIGHT_STOPS.length - 1)) * 100 + '%';
+    $('#dsFill').style.width = ((hi - lo) / (WEIGHT_STOPS.length - 1)) * 100 + '%';
+    // At equality expose the thumb that opens the range the useful way.
+    $('#weightLo').style.zIndex = lo === hi && lo >= (WEIGHT_STOPS.length - 1) / 2 ? 5 : 2;
+    $('#weightHi').style.zIndex = 3;
+  }
+  $('#weightLo').addEventListener('input', (e) => {
+    if (+e.target.value > +$('#weightHi').value) e.target.value = $('#weightHi').value;
+    syncWeightUI();
   });
-  $('#weightMin').addEventListener('change', (e) => {
-    state.wminIdx = +e.target.value;
-    buildFacets(); render(); syncHash();
+  $('#weightHi').addEventListener('input', (e) => {
+    if (+e.target.value < +$('#weightLo').value) e.target.value = $('#weightLo').value;
+    syncWeightUI();
   });
+  const applyWeight = () => { buildFacets(); render(); syncHash(); };
+  $('#weightLo').addEventListener('change', applyWeight);
+  $('#weightHi').addEventListener('change', applyWeight);
   $('#clearFilters').addEventListener('click', () => {
     state.materials.clear(); state.colours.clear(); state.brands.clear(); state.stores.clear();
     state.finishes.clear(); state.formats.clear(); state.diameters.clear();
-    state.wminIdx = 0; state.expanded.clear();
+    state.wloIdx = 0; state.whiIdx = WEIGHT_STOPS.length - 1; state.expanded.clear();
     state.q = ''; state.sale = false; state.stock = false; state.hideSamples = true;
     $('#q').value = '';
-    $('#weightMin').value = '0';
-    $('#weightVal').textContent = WEIGHT_LABELS[0];
+    $('#weightLo').value = '0';
+    $('#weightHi').value = String(WEIGHT_STOPS.length - 1);
+    syncWeightUI();
     $('#saleToggle').classList.remove('on');
     $('#stockToggle').classList.remove('on');
     $('#sampleToggle').classList.add('on');
@@ -560,8 +594,9 @@
   readHash();
   $('#q').value = state.q;
   $('#sort').value = state.sort;
-  $('#weightMin').value = String(state.wminIdx);
-  $('#weightVal').textContent = WEIGHT_LABELS[state.wminIdx];
+  $('#weightLo').value = String(state.wloIdx);
+  $('#weightHi').value = String(state.whiIdx);
+  syncWeightUI();
   $('#saleToggle').classList.toggle('on', state.sale);
   $('#stockToggle').classList.toggle('on', state.stock);
   $('#sampleToggle').classList.toggle('on', state.hideSamples);

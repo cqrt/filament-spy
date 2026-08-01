@@ -1,12 +1,13 @@
 import { readFileSync } from 'node:fs';
 const d = JSON.parse(readFileSync('data/products.json', 'utf8')).products;
-console.log('material=Other:', d.filter((p) => p.material === 'Other').length);
-const show = (label, rows) => { console.log(`\n${label}:`); for (const p of rows) console.log(`  ${p.material} / ${p.colour} [${(p.colours || []).join('+')}] / ${p.finish || '-'} | ${p.name.slice(0, 60)}`); };
-show('Silk 3dea (was Other)', d.filter((p) => p.store === '3dea' && /^silk/i.test(p.name)).slice(0, 6));
-show('PAHT-CF / PPA-CF', d.filter((p) => /^(PAHT|PPA)-CF$/.test(p.material)));
-show('eMarble / Wood (pbtech/marvle)', d.filter((p) => /emarble|eSun Wood/i.test(p.name)).slice(0, 4));
-show('PEEK / PEI / PPS / PEBA / PVC / PVA-aquatek / PVB-polycast', d.filter((p) => /^(PEEK|PEI|PPS|PSU|PEBA|PVC|PVA|PVB)$/.test(p.material)).slice(0, 10));
-console.log('\nMulti with components:', d.filter((p) => (p.colours || []).length > 2).length, 'products');
-const mats = {};
-for (const p of d) mats[p.material] = (mats[p.material] || 0) + 1;
-console.log('\nmaterials:', Object.entries(mats).sort((a, b) => b[1] - a[1]).slice(0, 30));
+const multi = d.filter((p) => p.colour === 'Multi');
+console.log('display colour = Multi:', multi.length);
+const withComponents = d.filter((p) => (p.colours || []).length > 2);
+console.log('Multi with components:', withComponents.length);
+for (const p of withComponents.slice(0, 15)) console.log(`  [${p.store}] ${JSON.stringify(p.colours)} | ${p.name.slice(0, 60)}`);
+// sanity: single-colour products unchanged
+const sp = d.find((p) => /silk purple-pink/i.test(p.name));
+console.log('\nSilk Purple-Pink:', sp?.material, sp?.colour, JSON.stringify(sp?.colours));
+const bg = d.find((p) => /blue[- ]gr(a|e)y/i.test(p.name));
+console.log('Blue-Gray product:', bg?.colour, JSON.stringify(bg?.colours), '|', bg?.name.slice(0, 50));
+console.log('\nOther:', d.filter((p) => p.material === 'Other').length);

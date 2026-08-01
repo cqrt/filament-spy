@@ -300,21 +300,37 @@ for (const [canonical, hex, aliases] of COLOURS) {
 }
 COLOUR_LOOKUP.sort((a, b) => b[0].length - a[0].length);
 
-// Multi-colour aware: consume aliases longest-first, collecting every distinct
-// canonical colour. 2+ => display "Multi" and expose components for faceting.
+// Colour pairs joined by '-' or '/' ("Purple-Pink", "Red/Gold") => Multi with
+// both component colours. Known alias pairs (e.g. "Blue-Gray") stay a single
+// colour. Everything else uses the single-colour alias table (multi aliases
+// like "tri-colour" => Multi on their own).
+const COLOUR_WORDS = [
+  'white', 'black', 'grey', 'gray', 'silver', 'red', 'orange', 'yellow', 'gold',
+  'copper', 'bronze', 'green', 'mint', 'lime', 'teal', 'cyan', 'blue', 'navy',
+  'purple', 'violet', 'lavender', 'pink', 'magenta', 'coral', 'brown', 'tan',
+  'beige', 'cream', 'ivory', 'jade', 'natural', 'rainbow',
+];
+const COLOUR_WORD_CANON = { gray: 'Grey', natural: 'Clear', rainbow: 'Rainbow' };
+const canonicalOfColour = (w) =>
+  COLOUR_WORD_CANON[w.toLowerCase()] || w[0].toUpperCase() + w.slice(1).toLowerCase();
 function detectColours(text) {
-  let remaining = ` ${text.toLowerCase()} `;
-  const found = [];
-  for (const [alias, canonical, hex] of COLOUR_LOOKUP) {
-    if (remaining.includes(alias)) {
-      if (!found.some((f) => f.colour === canonical)) found.push({ colour: canonical, colourHex: hex });
-      remaining = remaining.split(alias).join(' ');
+  const t = ` ${text.toLowerCase()} `;
+  const pairRe = new RegExp(`\\b(${COLOUR_WORDS.join('|')})\\s*[-/]\\s*(${COLOUR_WORDS.join('|')})\\b`, 'i');
+  const m = t.match(pairRe);
+  if (m) {
+    const spaceForm = `${m[1].toLowerCase()} ${m[2].toLowerCase()}`;
+    const aliasEntry = COLOUR_LOOKUP.find(([alias]) => alias === spaceForm);
+    if (aliasEntry) {
+      const [, canonical, hex] = aliasEntry;
+      return { colour: canonical, colourHex: hex, colours: [canonical] };
     }
+    const a = canonicalOfColour(m[1]);
+    const b = canonicalOfColour(m[2]);
+    if (a !== b) return { colour: 'Multi', colourHex: null, colours: ['Multi', a, b] };
   }
-  if (found.length > 1) {
-    return { colour: 'Multi', colourHex: null, colours: ['Multi', ...found.map((f) => f.colour)] };
+  for (const [alias, canonical, hex] of COLOUR_LOOKUP) {
+    if (t.includes(alias)) return { colour: canonical, colourHex: hex, colours: [canonical] };
   }
-  if (found.length === 1) return { ...found[0], colours: [found[0].colour] };
   return { colour: 'Other', colourHex: null, colours: ['Other'] };
 }
 

@@ -229,6 +229,14 @@ function detectMaterial(text) {
   return null;
 }
 
+// eSUN's unlabelled series are all PLA: Gloss (PLA Gloss), Matte (ePLA-Matte),
+// Silk (Silk PLA). Their PETG/ABS products are always labelled, so this only
+// runs as a last resort when no material keyword was found anywhere.
+function esunSeriesMaterial(text) {
+  if (!/\besun\b/i.test(text)) return null;
+  return /\b(gloss|matte|silk)\b/i.test(text) ? 'PLA' : null;
+}
+
 // Canonical colour table. Aliases are matched longest-first.
 const COLOURS = [
   ['White', '#f5f5f4', ['jade white', 'ivory white', 'white']],
@@ -464,6 +472,7 @@ async function scrapeShopify(store) {
           inStock: v.available === true,
           variant: variantName,
           _weightHint: store.defaultWeightKg || null,
+          _descHint: stripHtml(p.body_html || '').slice(0, 300),
         });
       }
     }
@@ -528,6 +537,7 @@ async function scrape3dea() {
         _colourHint: colourTerms,
         _materialHint: materialAttr || '',
         _weightHint: money(p.weight) || null,
+        _descHint: stripHtml(p.short_description || ''),
       });
     }
     if (products.length < 100) break;
@@ -881,7 +891,11 @@ const ADAPTERS = [
 
 function enrich(p) {
   const text = `${p.name} ${p.variant || ''}`;
-  const material = detectMaterial(`${p._materialHint || ''} ${text}`) || 'Other';
+  const material =
+    detectMaterial(`${p._materialHint || ''} ${text}`) ||
+    detectMaterial(p._descHint || '') ||
+    esunSeriesMaterial(text) ||
+    'Other';
   const { colour, colourHex } = detectColour(`${p._colourHint || ''} ${text}`);
   const weightKg = detectWeight(text) || p._weightHint || null;
   const pricePerKg = weightKg ? Math.round((p.price / weightKg) * 100) / 100 : null;
@@ -985,6 +999,36 @@ async function main() {
       all.push(...old.map((o) => ({ ...o, _preEnriched: true })));
       stores[adapter.key] = { ...st, status: 'stale', count: old.length };
       console.log(`  ${adapter.name}: keeping ${old.length} products from previous run (stale)`);
+    }
+  }
+
+  // If a store returned suspiciously few products vs its best known run
+  // (partial scrape behind bot protection), prefer its previous data over
+  // the partial one. High-water marks persist in meta.json so the floor
+  // never ratchets downward over successive bad runs.
+  const HIGH_WATER_SEED = { marvle3d: 134 };
+  let prevMeta = null;
+  try {
+    prevMeta = JSON.parse(await readFile(path.join(DATA_DIR, 'meta.json'), 'utf8'));
+  } catch { /* first run */ }
+  const highWater = {};
+  for (const adapter of ADAPTERS) {
+    highWater[adapter.key] = Math.max(
+      HIGH_WATER_SEED[adapter.key] || 0,
+      prevMeta?.stores?.[adapter.key]?.hw || 0,
+      stores[adapter.key]?.count || 0
+    );
+    if (stores[adapter.key]) stores[adapter.key].hw = highWater[adapter.key];
+  }
+  for (const adapter of ADAPTERS) {
+    const st = stores[adapter.key];
+    if (!st || st.status !== 'ok') continue;
+    const old = previous.filter((p) => p.store === adapter.key);
+    if (old.length >= 30 && st.count < highWater[adapter.key] * 0.6) {
+      for (let i = all.length - 1; i >= 0; i--) if (all[i].store === adapter.key) all.splice(i, 1);
+      all.push(...old.map((o) => ({ ...o, _preEnriched: true })));
+      stores[adapter.key] = { ...st, status: 'stale', count: old.length };
+      console.log(`  ${adapter.name}: only ${st.count} products vs best ${highWater[adapter.key]} — keeping previous data (stale)`);
     }
   }
 

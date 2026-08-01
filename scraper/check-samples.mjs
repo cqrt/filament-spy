@@ -1,12 +1,8 @@
 import { readFileSync } from 'node:fs';
 const d = JSON.parse(readFileSync('data/products.json', 'utf8')).products;
-const ft = d.filter((p) => p.store === 'formtech');
-console.log('formtech:', ft.length);
-const brands = {};
-for (const p of ft) brands[p.brand || 'null'] = (brands[p.brand || 'null'] || 0) + 1;
-console.log('brands:', Object.entries(brands).sort((a, b) => b[1] - a[1]).slice(0, 10));
-const noImg = ft.filter((p) => !p.image.startsWith('data/images/')).length;
-const noWt = ft.filter((p) => !p.weightKg).length;
-const badPrice = ft.filter((p) => !(p.price > 0)).length;
-console.log('missing local image:', noImg, '| missing weight:', noWt, '| bad price:', badPrice);
-for (const p of ft.slice(0, 6)) console.log(`  $${p.price} | ${p.brand} | ${p.name.slice(0, 65)} | ${p.material} | ${p.weightLabel}`);
+const other = d.filter((p) => p.material === 'Other');
+const byStore = {};
+for (const p of other) byStore[p.store] = (byStore[p.store] || 0) + 1;
+console.log('material=Other by store:', byStore, '| total:', other.length);
+console.log('\n3dea Other samples:');
+for (const p of other.filter((p) => p.store === '3dea').slice(0, 12)) console.log('  |', p.name.slice(0, 70));

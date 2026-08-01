@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-08-01T12:14:39.286Z",
+  "generatedAt": "2026-08-01T14:12:52.743Z",
   "stores": {
     "spool": {
       "name": "Spool",
       "url": "https://spool.co.nz",
       "status": "ok",
       "count": 79,
-      "durationMs": 621,
+      "durationMs": 1179,
       "hw": 79
     },
     "bits4bots": {
@@ -14,7 +14,7 @@
       "url": "https://bits4bots.co.nz",
       "status": "ok",
       "count": 957,
-      "durationMs": 1124,
+      "durationMs": 2883,
       "hw": 985
     },
     "formtech": {
@@ -22,7 +22,7 @@
       "url": "https://www.formtech.co.nz",
       "status": "ok",
       "count": 432,
-      "durationMs": 3625,
+      "durationMs": 3288,
       "hw": 445
     },
     "3dea": {
@@ -30,15 +30,15 @@
       "url": "https://www.3dea.co.nz",
       "status": "ok",
       "count": 674,
-      "durationMs": 67065,
+      "durationMs": 68733,
       "hw": 674
     },
     "mindkits": {
       "name": "Mindkits",
       "url": "https://www.mindkits.co.nz",
       "status": "ok",
-      "count": 426,
-      "durationMs": 32493,
+      "count": 425,
+      "durationMs": 32673,
       "hw": 509
     },
     "marvle3d": {
@@ -46,7 +46,7 @@
       "url": "https://marvle3d.co.nz",
       "status": "stale",
       "count": 134,
-      "durationMs": 6778,
+      "durationMs": 5744,
       "hw": 134
     },
     "pbtech": {
@@ -54,7 +54,7 @@
       "url": "https://www.pbtech.co.nz",
       "status": "ok",
       "count": 563,
-      "durationMs": 36236,
+      "durationMs": 37959,
       "hw": 563
     },
     "3dmax": {
@@ -62,18 +62,26 @@
       "url": "https://3dmax.co.nz",
       "status": "ok",
       "count": 156,
-      "durationMs": 34156,
+      "durationMs": 35018,
       "hw": 156
+    },
+    "wondershop": {
+      "name": "Wondershop",
+      "url": "https://www.wondershop.nz",
+      "status": "ok",
+      "count": 39,
+      "durationMs": 182,
+      "hw": 39
     },
     "jaycar": {
       "name": "Jaycar",
       "url": "https://www.jaycar.co.nz",
       "status": "error",
       "count": 0,
-      "error": "HTTP 403 (DataDome bot protection)",
-      "durationMs": 200,
+      "error": "fetch failed",
+      "durationMs": 7525,
       "hw": 0
     }
   },
-  "productCount": 3178
+  "productCount": 3217
 }

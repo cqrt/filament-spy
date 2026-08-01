@@ -931,6 +931,52 @@ async function scrape3dmax() {
   return out;
 }
 
+// Wondershop: custom site, single category page for the whole filament range.
+// Blocks carry variant colour names, sale prices and explicit stock status.
+async function scrapeWondershop() {
+  const store = { key: 'wondershop', name: 'Wondershop', baseUrl: 'https://www.wondershop.nz' };
+  const out = [];
+  const seen = new Set();
+  let html = '';
+  try {
+    html = await curlText(`${store.baseUrl}/c/filaments`, { ua: BROWSER_UA });
+  } catch {
+    html = '';
+  }
+  if (!html) throw new Error('fetch failed');
+  for (const c of html.split(/<div id="prls_(prit_\d+_\d+)"/).slice(1)) {
+    const title = decodeEntities(c.match(/<div class="name">\s*<a href="[^"]+">([^<]+)/)?.[1] || '').trim();
+    if (!title || !looksLikeFilament(title)) continue;
+    const href = c.match(/<a href="(\/i\/[^"]+\.html)"/)?.[1];
+    if (!href) continue;
+    const pid = c.match(/^(prit_\d+_\d+)/)?.[1] || href;
+    if (seen.has(pid)) continue;
+    const price = money(c.match(/<div class="price">\s*\$?([\d,]+(?:\.\d+)?)/)?.[1]);
+    if (price == null) continue;
+    const was = money(c.match(/<span class="price-o">\s*\$?([\d,]+(?:\.\d+)?)/)?.[1]);
+    const variant = decodeEntities(c.match(/<div class="l dots">([^<]+)/)?.[1] || '').trim();
+    const image = c.match(/<img src="(\/uploads\/[^"]+?)"/)?.[1] || '';
+    const inStock = /Discontinued/i.test(c) ? false : /In Stock/i.test(c) ? true : null;
+    seen.add(pid);
+    out.push({
+      id: `${store.key}-${pid}`,
+      name: variant && !title.toLowerCase().includes(variant.toLowerCase()) ? `${title} - ${variant}` : title,
+      brand: detectBrand(title, 'Wondershop'),
+      store: store.key,
+      storeName: store.name,
+      url: `${store.baseUrl}${href}`,
+      image: image ? `${store.baseUrl}${image}` : '',
+      price,
+      wasPrice: was && was > price ? was : null,
+      currency: 'NZD',
+      inStock,
+      variant,
+      _colourHint: variant,
+    });
+  }
+  return out;
+}
+
 async function scrapeJaycar() {
   // Jaycar is behind DataDome bot protection; attempt a plain fetch but expect failure.
   const res = await fetch('https://www.jaycar.co.nz/3d-printing-filament/c/450', {
@@ -994,6 +1040,7 @@ const ADAPTERS = [
   { key: 'marvle3d', name: 'Marvle3D', url: 'https://marvle3d.co.nz', fn: scrapeMarvle3d },
   { key: 'pbtech', name: 'PB Tech', url: 'https://www.pbtech.co.nz', fn: scrapePbtech },
   { key: '3dmax', name: '3D Max', url: 'https://3dmax.co.nz', fn: scrape3dmax },
+  { key: 'wondershop', name: 'Wondershop', url: 'https://www.wondershop.nz', fn: scrapeWondershop },
   { key: 'jaycar', name: 'Jaycar', url: 'https://www.jaycar.co.nz', fn: scrapeJaycar },
 ];
 

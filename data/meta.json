@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-08-02T13:09:35.793Z",
+  "generatedAt": "2026-08-02T19:42:00.914Z",
   "stores": {
     "spool": {
       "name": "Spool",
       "url": "https://spool.co.nz",
       "status": "ok",
       "count": 79,
-      "durationMs": 848,
+      "durationMs": 1074,
       "hw": 79
     },
     "bits4bots": {
@@ -14,7 +14,7 @@
       "url": "https://bits4bots.co.nz",
       "status": "ok",
       "count": 957,
-      "durationMs": 3358,
+      "durationMs": 3079,
       "hw": 985
     },
     "formtech": {
@@ -22,7 +22,7 @@
       "url": "https://www.formtech.co.nz",
       "status": "ok",
       "count": 432,
-      "durationMs": 4421,
+      "durationMs": 4991,
       "hw": 445
     },
     "3dea": {
@@ -30,7 +30,8 @@
       "url": "https://www.3dea.co.nz",
       "status": "stale",
       "count": 674,
-      "durationMs": 116946,
+      "error": "HTTP 403 for https://www.3dea.co.nz/shop/wp-json/wc/store/v1/products?per_page=100&page=1",
+      "durationMs": 5090,
       "hw": 674
     },
     "3dps": {
@@ -38,15 +39,15 @@
       "url": "https://3dprintingservices.co.nz",
       "status": "ok",
       "count": 54,
-      "durationMs": 4104,
+      "durationMs": 5494,
       "hw": 54
     },
     "mindkits": {
       "name": "Mindkits",
       "url": "https://www.mindkits.co.nz",
       "status": "ok",
-      "count": 399,
-      "durationMs": 34193,
+      "count": 406,
+      "durationMs": 27642,
       "hw": 509
     },
     "marvle3d": {
@@ -54,7 +55,7 @@
       "url": "https://marvle3d.co.nz",
       "status": "stale",
       "count": 134,
-      "durationMs": 5365,
+      "durationMs": 6711,
       "hw": 134
     },
     "pbtech": {
@@ -62,7 +63,7 @@
       "url": "https://www.pbtech.co.nz",
       "status": "stale",
       "count": 563,
-      "durationMs": 39184,
+      "durationMs": 18854,
       "hw": 563
     },
     "3dmax": {
@@ -70,7 +71,7 @@
       "url": "https://3dmax.co.nz",
       "status": "ok",
       "count": 156,
-      "durationMs": 29373,
+      "durationMs": 134502,
       "hw": 156
     },
     "wondershop": {
@@ -78,7 +79,7 @@
       "url": "https://www.wondershop.nz",
       "status": "stale",
       "count": 39,
-      "durationMs": 374,
+      "durationMs": 256,
       "hw": 39
     },
     "jaycar": {
@@ -87,9 +88,9 @@
       "status": "error",
       "count": 0,
       "error": "HTTP 403 (DataDome bot protection)",
-      "durationMs": 3456,
+      "durationMs": 523,
       "hw": 0
     }
   },
-  "productCount": 3245
+  "productCount": 3251
 }

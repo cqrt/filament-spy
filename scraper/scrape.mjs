@@ -320,8 +320,12 @@ const canonicalOfColour = (w) =>
   COLOUR_WORD_CANON[w.toLowerCase()] || w[0].toUpperCase() + w.slice(1).toLowerCase();
 function detectColours(text) {
   const t = ` ${text.toLowerCase()} `;
+  // Translucency is a finish, not a colour: strip those words so a real colour
+  // can win ("Translucent Blue" => Blue). If nothing else remains, the alias
+  // pass on the original text maps it to Clear.
+  const stripped = t.replace(/\b(semi[- ]?translucent|translucent|transparent)\b/g, ' ');
   const pairRe = new RegExp(`\\b(${COLOUR_WORDS.join('|')})\\s*[-/]\\s*(${COLOUR_WORDS.join('|')})\\b`, 'i');
-  const m = t.match(pairRe);
+  const m = stripped.match(pairRe);
   if (m) {
     const spaceForm = `${m[1].toLowerCase()} ${m[2].toLowerCase()}`;
     const aliasEntry = COLOUR_LOOKUP.find(([alias]) => alias === spaceForm);
@@ -332,6 +336,9 @@ function detectColours(text) {
     const a = canonicalOfColour(m[1]);
     const b = canonicalOfColour(m[2]);
     if (a !== b) return { colour: 'Multi', colourHex: null, colours: ['Multi', a, b] };
+  }
+  for (const [alias, canonical, hex] of COLOUR_LOOKUP) {
+    if (stripped.includes(alias)) return { colour: canonical, colourHex: hex, colours: [canonical] };
   }
   for (const [alias, canonical, hex] of COLOUR_LOOKUP) {
     if (t.includes(alias)) return { colour: canonical, colourHex: hex, colours: [canonical] };
@@ -424,6 +431,7 @@ function detectFinish(text) {
   if (/\bmatte\b/i.test(text)) return 'Matte';
   if (/\bwood\b|\bcr[ -]?wood\b/i.test(text)) return 'Wood';
   if (/\bmarble\b/i.test(text)) return 'Marble';
+  if (/\b(semi[- ]?translucent|translucent|transparent)\b/i.test(text)) return 'Translucent';
   return null;
 }
 

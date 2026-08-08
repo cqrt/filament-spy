@@ -1,0 +1,42 @@
+{
+  "updated": "2026-08-08",
+  "note": "Shipping rates are ESTIMATES for single-filament orders. Edit this file with actual rates — retailers change them often. 'default' applies when a region has no specific rate. 'freeOver' = order total for free shipping (null = none known). 'rural' = extra charge for rural delivery. 'pickup' = regions where the store has physical locations (click & collect / local stock likely).",
+  "regions": [
+    "Auckland",
+    "Northland",
+    "Waikato",
+    "Bay of Plenty",
+    "Gisborne",
+    "Hawke's Bay",
+    "Taranaki",
+    "Manawatū-Whanganui",
+    "Wellington",
+    "Nelson / Tasman",
+    "Marlborough",
+    "West Coast",
+    "Canterbury",
+    "Otago",
+    "Southland"
+  ],
+  "stores": {
+    "spool": { "default": 8.5, "rural": 4.0, "freeOver": null, "pickup": [], "estimate": true },
+    "bits4bots": { "default": 6.5, "rural": 3.5, "freeOver": null, "pickup": [], "estimate": true },
+    "formtech": { "default": 8.5, "regions": { "Auckland": 6.5 }, "rural": 4.0, "freeOver": null, "pickup": [], "estimate": true },
+    "3dea": { "default": 8.9, "rural": 4.0, "freeOver": null, "pickup": [], "estimate": true },
+    "3dps": { "default": 8.9, "rural": 4.0, "freeOver": null, "pickup": [], "estimate": true },
+    "mindkits": { "default": 7.9, "regions": { "Auckland": 5.9 }, "rural": 4.0, "freeOver": null, "pickup": [], "estimate": true },
+    "marvle3d": { "default": 8.9, "rural": 4.0, "freeOver": null, "pickup": [], "estimate": true },
+    "pbtech": {
+      "default": 7.99, "regions": { "Auckland": 5.99 }, "rural": 4.5, "freeOver": null,
+      "pickup": ["Auckland", "Waikato", "Bay of Plenty", "Wellington", "Canterbury", "Otago"],
+      "estimate": true
+    },
+    "3dmax": { "default": 8.5, "rural": 4.0, "freeOver": null, "pickup": [], "estimate": true },
+    "wondershop": { "default": 7.5, "rural": 3.5, "freeOver": null, "pickup": [], "estimate": true },
+    "jaycar": {
+      "default": 7.5, "rural": 4.5, "freeOver": null,
+      "pickup": ["Auckland", "Northland", "Waikato", "Bay of Plenty", "Hawke's Bay", "Taranaki", "Manawatū-Whanganui", "Wellington", "Nelson / Tasman", "Canterbury", "Otago", "Southland"],
+      "estimate": true
+    }
+  }
+}

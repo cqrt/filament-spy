@@ -62,7 +62,16 @@
     user-select: none; transition: all .15s;
   }
   .chip-toggle.on { background: rgba(255,180,84,.15); border-color: var(--accent); color: var(--accent); }
-  select#sort {
+  select#sort, select#region {
+    padding: .5rem .7rem; border-radius: 8px; font-size: .85rem;
+    background: var(--bg-soft); border: 1px solid var(--border); color: var(--text); cursor: pointer;
+  }
+  select#region { max-width: 190px; }
+  .rural-label { display: inline-flex; align-items: center; gap: .3rem; font-size: .78rem; color: var(--muted); cursor: pointer; user-select: none; }
+  .ship { font-size: .72rem; color: var(--muted); }
+  .ship b { color: var(--accent); font-weight: 600; }
+  .tag.pickup { background: rgba(63,185,80,.12); border-color: rgba(63,185,80,.4); color: var(--good); }
+  select#sort_legacy {
     padding: .5rem .7rem; border-radius: 8px; font-size: .85rem;
     background: var(--bg-soft); border: 1px solid var(--border); color: var(--text); cursor: pointer;
   }
@@ -199,6 +208,8 @@
     <input id="q" type="search" placeholder="Search filament, brand, colour, material… (e.g. “red petg”, “bambu pla”)" autocomplete="off">
   </div>
   <div class="toggles">
+    <select id="region" title="Your region — enables delivered-price estimates"><option value="">📍 Set region…</option></select>
+    <label class="rural-label" id="ruralLabel" hidden title="Rural delivery surcharge applies"><input type="checkbox" id="rural"> Rural</label>
     <button class="chip-toggle" id="saleToggle" title="Only show items on sale">🏷️ Deals</button>
     <button class="chip-toggle" id="stockToggle" title="Hide out-of-stock items">✓ In stock</button>
     <select id="sort" title="Sort results">
@@ -207,6 +218,8 @@
       <option value="pricedesc">Price: high → low</option>
       <option value="discount">Biggest discount</option>
       <option value="name">Name A–Z</option>
+      <option value="delivered">Delivered $ (region)</option>
+      <option value="deliveredkg">Delivered $/kg (region)</option>
     </select>
   </div>
 </header>
@@ -283,6 +296,11 @@
   };
   let DATA = [];
   let META = null;
+  let SHIPPING = null;
+  const profile = {
+    region: localStorage.getItem('fs_region') || '',
+    rural: localStorage.getItem('fs_rural') === '1',
+  };
 
   const $ = (s) => document.querySelector(s);
   const ESC_MAP = { '&': '&' + 'amp;', '<': '&' + 'lt;', '>': '&' + 'gt;', '"': '&' + 'quot;', "'": '&#39;' };
@@ -306,6 +324,11 @@
       const m = await fetch('data/meta.json', { cache: 'no-cache' });
       if (m.ok) META = await m.json();
     } catch (_) { /* meta is optional */ }
+    try {
+      const sh = await fetch('data/shipping.json', { cache: 'no-cache' });
+      if (sh.ok) SHIPPING = await sh.json();
+    } catch (_) { /* shipping estimates optional */ }
+    initProfile();
     buildFacets();
     renderStoreStatus();
     render();
@@ -332,10 +355,33 @@
     return true;
   }
 
+  function shipRate(storeKey, price) {
+    if (!SHIPPING || !profile.region) return null;
+    const st = SHIPPING.stores?.[storeKey];
+    if (!st) return null;
+    let r = st.regions?.[profile.region] ?? st.default ?? null;
+    if (r == null) return null;
+    if (st.freeOver != null && price >= st.freeOver) r = 0;
+    else if (profile.rural) r += st.rural || 0;
+    return r;
+  }
+  const delivered = (p) => {
+    const r = shipRate(p.store, p.price);
+    return r == null ? null : p.price + r;
+  };
+  const deliveredPerKg = (p) => {
+    const d = delivered(p);
+    return d != null && p.weightKg ? d / p.weightKg : null;
+  };
+  const canPickup = (p) =>
+    profile.region && SHIPPING?.stores?.[p.store]?.pickup?.includes(profile.region);
+
   function sortProducts(list) {
     const by = {
       perkg: (a, b) => (a.pricePerKg ?? Infinity) - (b.pricePerKg ?? Infinity) || a.price - b.price,
       price: (a, b) => a.price - b.price,
+      delivered: (a, b) => (delivered(a) ?? Infinity) - (delivered(b) ?? Infinity) || a.price - b.price,
+      deliveredkg: (a, b) => (deliveredPerKg(a) ?? Infinity) - (deliveredPerKg(b) ?? Infinity) || a.price - b.price,
       pricedesc: (a, b) => b.price - a.price,
       discount: (a, b) => disc(b) - disc(a),
       name: (a, b) => a.name.localeCompare(b.name),
@@ -449,7 +495,11 @@
             ${p.format ? `<span class="tag">${esc(p.format)}</span>` : ''}
             ${p.weightKg ? `<span class="tag">${p.weightKg}kg</span>` : ''}
             ${p.brand ? `<span class="tag">${esc(p.brand)}</span>` : ''}
+            ${canPickup(p) ? `<span class="tag pickup" title="${esc(p.storeName)} has a store in ${esc(profile.region)} — check local stock / click & collect">🏬 Pickup in region</span>` : ''}
           </div>
+          ${(() => { const d = delivered(p); return d != null
+            ? `<div class="ship" title="Estimate: item price + ${esc(p.storeName)} shipping to ${esc(profile.region)}${profile.rural ? ' (rural)' : ''}. Shipping is per-order — buying more items dilutes it.">≈ <b>${fmt(d)}</b> delivered${p.weightKg ? ` (${fmt(deliveredPerKg(p))}/kg)` : ''}</div>`
+            : ''; })()}
           <div class="priceline">
             <span class="price">${fmt(p.price)}</span>
             ${p.wasPrice ? `<span class="was">${fmt(p.wasPrice)}</span>` : ''}
@@ -633,6 +683,29 @@
     buildFacets(); render(); syncHash();
   });
   $('#facetToggle').addEventListener('click', () => $('#sidebar').classList.toggle('open'));
+
+  /* ---------- region profile ---------- */
+  function initProfile() {
+    const sel = $('#region');
+    if (!SHIPPING?.regions) return;
+    sel.innerHTML = '<option value="">📍 Set region…</option>' +
+      SHIPPING.regions.map((r) => `<option ${r === profile.region ? 'selected' : ''}>${esc(r)}</option>`).join('');
+    const ruralLabel = $('#ruralLabel');
+    const ruralBox = $('#rural');
+    ruralLabel.hidden = !profile.region;
+    ruralBox.checked = profile.rural;
+    sel.addEventListener('change', () => {
+      profile.region = sel.value;
+      localStorage.setItem('fs_region', profile.region);
+      ruralLabel.hidden = !profile.region;
+      render();
+    });
+    ruralBox.addEventListener('change', () => {
+      profile.rural = ruralBox.checked;
+      localStorage.setItem('fs_rural', profile.rural ? '1' : '0');
+      render();
+    });
+  }
 
   /* ---------- init ---------- */
   readHash();

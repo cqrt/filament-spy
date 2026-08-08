@@ -8,6 +8,10 @@
     "node": ">=20"
   },
   "scripts": {
+    "jaycar": "node jaycar-browser.mjs",
     "scrape": "node scrape.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.62.1"
   }
 }

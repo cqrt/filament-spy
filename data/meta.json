@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-08-07T19:22:01.854Z",
+  "generatedAt": "2026-08-08T02:04:47.245Z",
   "stores": {
     "spool": {
       "name": "Spool",
       "url": "https://spool.co.nz",
       "status": "ok",
       "count": 79,
-      "durationMs": 728,
+      "durationMs": 886,
       "hw": 79
     },
     "bits4bots": {
@@ -14,7 +14,7 @@
       "url": "https://bits4bots.co.nz",
       "status": "ok",
       "count": 957,
-      "durationMs": 3074,
+      "durationMs": 2585,
       "hw": 985
     },
     "formtech": {
@@ -22,16 +22,15 @@
       "url": "https://www.formtech.co.nz",
       "status": "ok",
       "count": 432,
-      "durationMs": 5102,
+      "durationMs": 3936,
       "hw": 445
     },
     "3dea": {
       "name": "3DEA",
       "url": "https://www.3dea.co.nz",
-      "status": "stale",
+      "status": "ok",
       "count": 674,
-      "error": "HTTP 403 for https://www.3dea.co.nz/shop/wp-json/wc/store/v1/products?per_page=100&page=1",
-      "durationMs": 5385,
+      "durationMs": 61257,
       "hw": 674
     },
     "3dps": {
@@ -39,58 +38,56 @@
       "url": "https://3dprintingservices.co.nz",
       "status": "ok",
       "count": 54,
-      "durationMs": 4764,
+      "durationMs": 3825,
       "hw": 54
     },
     "mindkits": {
       "name": "Mindkits",
       "url": "https://www.mindkits.co.nz",
       "status": "stale",
-      "count": 377,
-      "durationMs": 48814,
+      "count": 399,
+      "durationMs": 54676,
       "hw": 509
     },
     "marvle3d": {
       "name": "Marvle3D",
       "url": "https://marvle3d.co.nz",
-      "status": "stale",
+      "status": "ok",
       "count": 134,
-      "durationMs": 4814,
+      "durationMs": 23051,
       "hw": 134
     },
     "pbtech": {
       "name": "PB Tech",
       "url": "https://www.pbtech.co.nz",
-      "status": "stale",
-      "count": 563,
-      "durationMs": 18577,
-      "hw": 563
+      "status": "ok",
+      "count": 564,
+      "durationMs": 56986,
+      "hw": 564
     },
     "3dmax": {
       "name": "3D Max",
       "url": "https://3dmax.co.nz",
       "status": "ok",
       "count": 156,
-      "durationMs": 34828,
+      "durationMs": 37354,
       "hw": 156
     },
     "wondershop": {
       "name": "Wondershop",
       "url": "https://www.wondershop.nz",
-      "status": "stale",
+      "status": "ok",
       "count": 39,
-      "durationMs": 87,
+      "durationMs": 725,
       "hw": 39
     },
     "jaycar": {
       "name": "Jaycar",
       "url": "https://www.jaycar.co.nz",
-      "status": "error",
-      "count": 0,
-      "error": "HTTP 403 (DataDome bot protection)",
-      "durationMs": 373,
-      "hw": 0
+      "status": "manual",
+      "count": 310,
+      "hw": 310
     }
   },
-  "productCount": 3223
+  "productCount": 3555
 }

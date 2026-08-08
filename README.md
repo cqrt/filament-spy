@@ -20,7 +20,7 @@ and price-per-kg** across NZ retailers, and surfaces the best deals.
 | [3dmax.co.nz](https://3dmax.co.nz) | OpenCart category pages | ✅ Automatic |
 | [wondershop.nz](https://www.wondershop.nz) | Category page HTML | ✅ Automatic |
 | [3dprintingservices.co.nz](https://3dprintingservices.co.nz) | WooCommerce Store API (prices shown GST-inclusive) | ✅ Automatic |
-| [jaycar.co.nz](https://www.jaycar.co.nz) | Blocked by DataDome bot protection | ⚠️ Manual file only — see `data/manual/` |
+| [jaycar.co.nz](https://www.jaycar.co.nz) | DataDome bot protection | 🤖 Local browser scrape — `npm run jaycar` (daily via Task Scheduler) |
 
 ## How it works
 

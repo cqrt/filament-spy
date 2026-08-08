@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-08-08T02:04:47.245Z",
+  "generatedAt": "2026-08-08T02:47:37.374Z",
   "stores": {
     "spool": {
       "name": "Spool",
       "url": "https://spool.co.nz",
       "status": "ok",
       "count": 79,
-      "durationMs": 886,
+      "durationMs": 1240,
       "hw": 79
     },
     "bits4bots": {
@@ -14,7 +14,7 @@
       "url": "https://bits4bots.co.nz",
       "status": "ok",
       "count": 957,
-      "durationMs": 2585,
+      "durationMs": 1508,
       "hw": 985
     },
     "formtech": {
@@ -22,7 +22,7 @@
       "url": "https://www.formtech.co.nz",
       "status": "ok",
       "count": 432,
-      "durationMs": 3936,
+      "durationMs": 4098,
       "hw": 445
     },
     "3dea": {
@@ -30,7 +30,7 @@
       "url": "https://www.3dea.co.nz",
       "status": "ok",
       "count": 674,
-      "durationMs": 61257,
+      "durationMs": 67455,
       "hw": 674
     },
     "3dps": {
@@ -38,7 +38,7 @@
       "url": "https://3dprintingservices.co.nz",
       "status": "ok",
       "count": 54,
-      "durationMs": 3825,
+      "durationMs": 4166,
       "hw": 54
     },
     "mindkits": {
@@ -46,15 +46,15 @@
       "url": "https://www.mindkits.co.nz",
       "status": "stale",
       "count": 399,
-      "durationMs": 54676,
+      "durationMs": 53747,
       "hw": 509
     },
     "marvle3d": {
       "name": "Marvle3D",
       "url": "https://marvle3d.co.nz",
       "status": "ok",
-      "count": 134,
-      "durationMs": 23051,
+      "count": 95,
+      "durationMs": 16201,
       "hw": 134
     },
     "pbtech": {
@@ -62,7 +62,7 @@
       "url": "https://www.pbtech.co.nz",
       "status": "ok",
       "count": 564,
-      "durationMs": 56986,
+      "durationMs": 50380,
       "hw": 564
     },
     "3dmax": {
@@ -70,7 +70,7 @@
       "url": "https://3dmax.co.nz",
       "status": "ok",
       "count": 156,
-      "durationMs": 37354,
+      "durationMs": 32952,
       "hw": 156
     },
     "wondershop": {
@@ -78,7 +78,7 @@
       "url": "https://www.wondershop.nz",
       "status": "ok",
       "count": 39,
-      "durationMs": 725,
+      "durationMs": 526,
       "hw": 39
     },
     "jaycar": {
@@ -89,5 +89,5 @@
       "hw": 310
     }
   },
-  "productCount": 3555
+  "productCount": 3516
 }

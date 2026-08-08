@@ -337,6 +337,28 @@ function detectColours(text) {
     const b = canonicalOfColour(m[2]);
     if (a !== b) return { colour: 'Multi', colourHex: null, colours: ['Multi', a, b] };
   }
+  // Space-separated multi colours ("Silk Blue Green Orange"): runs of 2+
+  // consecutive canonical colour words => Multi. A run that is itself a known
+  // two-word alias ("mint lime", "blue grey") stays a single colour, and
+  // modifier-first names ("marine blue") never form runs at all.
+  const wordRe = new RegExp(`\\b(${COLOUR_WORDS.join('|')})\\b`, 'gi');
+  const hits = [...stripped.matchAll(wordRe)].map((m) => ({ w: m[1].toLowerCase(), i: m.index }));
+  const runs = [];
+  for (const h of hits) {
+    const prev = runs.at(-1);
+    if (prev && /^\s+$/.test(stripped.slice(prev.end, h.i))) {
+      prev.words.push(h.w);
+      prev.end = h.i + h.w.length;
+    } else {
+      runs.push({ words: [h.w], end: h.i + h.w.length });
+    }
+  }
+  for (const run of runs) {
+    if (run.words.length < 2) continue;
+    if (COLOUR_LOOKUP.some(([alias]) => alias === run.words.join(' '))) continue;
+    const comps = [...new Set(run.words.map(canonicalOfColour))];
+    if (comps.length > 1) return { colour: 'Multi', colourHex: null, colours: ['Multi', ...comps] };
+  }
   for (const [alias, canonical, hex] of COLOUR_LOOKUP) {
     if (stripped.includes(alias)) return { colour: canonical, colourHex: hex, colours: [canonical] };
   }

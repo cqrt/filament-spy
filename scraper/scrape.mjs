@@ -353,9 +353,16 @@ function detectColours(text) {
       runs.push({ words: [h.w], end: h.i + h.w.length });
     }
   }
+  // Multi needs 2+ PRIMARY colour words in the run. Shade words (coral,
+  // teal, mint, navy, ...) act as modifiers: "Navy Blue" is one colour.
+  const PRIMARY = new Set([
+    'white', 'black', 'grey', 'gray', 'silver', 'red', 'orange', 'yellow',
+    'gold', 'green', 'blue', 'purple', 'pink', 'brown',
+  ]);
   for (const run of runs) {
     if (run.words.length < 2) continue;
     if (COLOUR_LOOKUP.some(([alias]) => alias === run.words.join(' '))) continue;
+    if (run.words.filter((w) => PRIMARY.has(w)).length < 2) continue;
     const comps = [...new Set(run.words.map(canonicalOfColour))];
     if (comps.length > 1) return { colour: 'Multi', colourHex: null, colours: ['Multi', ...comps] };
   }

@@ -2518,7 +2518,7 @@
     "price": 46.9,
     "wasPrice": null,
     "currency": "NZD",
-    "inStock": true,
+    "inStock": false,
     "variant": ""
   },
   {
